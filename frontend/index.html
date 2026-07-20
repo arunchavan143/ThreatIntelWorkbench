@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Threat Intel Workbench Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+    <!-- ============================================================
+    PAGE 1: SEARCH
+    ============================================================ -->
+    <div id="page-search" class="page-search">
+        <div class="search-bg"></div>
+        <div class="search-container">
+            <div class="logo-main">
+                <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <h1>Threat Intel Workbench</h1>
+                <p>Multi-source IOC investigation platform</p>
+            </div>
+
+            <div class="feed-status" id="feedStatus">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="input-tabs">
+                <button class="input-tab active" data-type="ip"><i class="fa-solid fa-globe"></i> IP</button>
+                <button class="input-tab" data-type="domain"><i class="fa-solid fa-link"></i> Domain</button>
+                <button class="input-tab" data-type="hash"><i class="fa-solid fa-fingerprint"></i> Hash</button>
+                <button class="input-tab" data-type="url"><i class="fa-solid fa-link"></i> URL</button>
+                <button class="input-tab" data-type="batch"><i class="fa-solid fa-layer-group"></i> Batch</button>
+            </div>
+
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="Enter IP address..." value="8.8.8.8" />
+                <button class="search-btn" id="investigateBtn"><i class="fa-solid fa-magnifying-glass"></i> Investigate</button>
+            </div>
+            <div class="search-hint">Press Ctrl+Enter to investigate</div>
+
+            <div class="recent-section">
+                <div class="recent-header">
+                    <h3>Recent Investigations</h3>
+                    <button class="clear-btn" id="clearRecent">Clear all</button>
+                </div>
+                <div class="recent-chips" id="recentChips">
+                    <!-- Loaded from localStorage -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    PAGE 2: RESULTS
+    ============================================================ -->
+    <div id="page-results" class="page-results">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="back-btn" id="backBtn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                <span class="logo" id="logoText">🛡️ Threat Intel Workbench</span>
+            </div>
+            <div class="topbar-right">
+                <span><span class="status-dot"></span> Online</span>
+                <button class="icon-btn" id="copyBtn" title="Copy IOC"><i class="fa-regular fa-copy"></i></button>
+                <button class="btn-export" id="exportPDFBtn">📄 PDF</button>
+            </div>
+        </header>
+
+        <div class="results-layout">
+            <aside class="results-sidebar">
+                <div class="nav-label">Navigation</div>
+                <button class="nav-item active" data-tab="overview"><i class="fa-solid fa-chart-simple"></i> <span>Overview</span></button>
+                <button class="nav-item" data-tab="intelligence"><i class="fa-solid fa-brain"></i> <span>Intelligence</span></button>
+                <button class="nav-item" data-tab="evidence"><i class="fa-solid fa-list-check"></i> <span>Evidence</span></button>
+                <button class="nav-item" data-tab="relationships"><i class="fa-solid fa-diagram-project"></i> <span>Relationships</span></button>
+                <button class="nav-item" data-tab="timeline"><i class="fa-solid fa-clock-rotate-left"></i> <span>Timeline</span></button>
+                <div class="nav-divider"></div>
+                <div class="nav-label">System</div>
+                <button class="nav-item" data-tab="settings"><i class="fa-solid fa-gear"></i> <span>Settings</span></button>
+            </aside>
+
+            <main class="results-main" id="resultsMain">
+                <div id="tab-content">
+                    <div id="overviewTab" class="tab-panel active">
+                        <div style="padding:40px;text-align:center;color:var(--text-dark);">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:10px;"></i>
+                            <p>Loading investigation results...</p>
+                        </div>
+                    </div>
+                    <div id="intelligenceTab" class="tab-panel"></div>
+                    <div id="evidenceTab" class="tab-panel"></div>
+                    <div id="relationshipsTab" class="tab-panel"></div>
+                    <div id="timelineTab" class="tab-panel"></div>
+                    <div id="settingsTab" class="tab-panel"></div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="footer-bar">
+            <span><span class="dot"></span> All Systems Operational</span>
+            <div class="items">
+                <span><i class="fa-solid fa-memory"></i> Cache: <span id="cachePercent">-</span></span>
+                <span><i class="fa-solid fa-cloud"></i> API Calls: <span id="apiCalls">-</span></span>
+                <span><i class="fa-solid fa-clock"></i> Uptime: <span id="uptime">-</span></span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ============================================================
+    SCRIPTS - LOAD IN CORRECT ORDER
+    ============================================================ -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/app.js"></script>
+
+</body>
+</html>
