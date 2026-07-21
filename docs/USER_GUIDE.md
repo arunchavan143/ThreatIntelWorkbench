@@ -1,4 +1,4 @@
-# User Guide - Threat Intel Workbench Pro
+# User Guide - Threat Intel Workbench Pro V3
 
 Welcome to the **Threat Intel Workbench Pro** User Guide. This document walks you through investigating Indicators of Compromise (IOCs), interpreting multi-source threat intelligence, analyzing MITRE ATT&CK mapping and Threat Actor attribution, and generating professional reports.
 

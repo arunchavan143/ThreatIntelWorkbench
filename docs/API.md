@@ -1,4 +1,4 @@
-# API Reference - Threat Intel Workbench Pro
+# API Reference - Threat Intel Workbench Pro V3
 
 This document describes the REST API endpoints provided by the **Threat Intel Workbench Pro** backend service.
 

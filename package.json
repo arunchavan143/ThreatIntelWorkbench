@@ -1,6 +1,6 @@
 {
   "name": "threat-intel-workbench-backend",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "Professional SOC analyst tool for IOC investigation",
   "main": "src/app.js",
   "scripts": {

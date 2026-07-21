@@ -1,5 +1,6 @@
-# 🛡️ Threat Intel Workbench Pro
+# 🛡️ Threat Intel Workbench Pro V3
 
+[![Version](https://img.shields.io/badge/Version-3.0.0--V3-F59E0B?style=flat-square)](https://github.com/arunchavan143/demo12)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express.js-4.x-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
