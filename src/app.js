@@ -22,6 +22,8 @@ const DNSService = require('./services/dns.service');
 const SSLService = require('./services/ssl.service');
 const GeolocationService = require('./services/geolocation.service');
 const CTService = require('./services/certificate-transparency.service');
+const MitreService = require('./services/mitre.service');
+const ActorService = require('./services/actor.service');
 
 // ============================================================
 // MIDDLEWARE IMPORTS & SETUP
@@ -51,7 +53,19 @@ app.use('/api/', limiter);
 app.use('/api/export', exportRoutes);
 
 // ============================================================
-// SERVE STATIC FRONTEND FILES
+// MITRE ATT&CK SYNC ROUTE
+// ============================================================
+app.post('/api/mitre/sync', async (req, res) => {
+    try {
+        await MitreService.syncSTIXData();
+        res.json({ success: true, message: 'MITRE ATT&CK STIX 2.1 dataset synchronization triggered successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ============================================================
+// FRONTEND STATIC SPA FALLBACK
 // ============================================================
 // Serve frontend folder
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -142,6 +156,9 @@ app.get('/api/investigate/ip/:ip', async (req, res) => {
         if (geo.success) findings.push(`Location: ${geo.country}, ${geo.city || 'N/A'}`);
         if (asn.success) findings.push(`ASN: ${asn.asn} (${asn.as_name})`);
 
+        const mappedTechniques = await MitreService.mapTechniques({ virustotal: vt, abuseipdb: abuse, shodan: shodan, otx: otx });
+        const actorData = await ActorService.getActorByIOC({ providers: { virustotal: vt, abuseipdb: abuse, shodan: shodan, otx: otx }, mitre: mappedTechniques });
+
         const assessment = {
             score: riskScore,
             risk: verdict,
@@ -150,7 +167,8 @@ app.get('/api/investigate/ip/:ip', async (req, res) => {
             sourcesResponded: activeSources,
             totalSources: 6,
             findings: findings.length ? findings : ['No threats detected'],
-            attackTechniques: []
+            attackTechniques: mappedTechniques,
+            actor: actorData
         };
 
         let aiSummary = null;
@@ -175,7 +193,9 @@ app.get('/api/investigate/ip/:ip', async (req, res) => {
             providers: { virustotal: vt, abuseipdb: abuse, shodan: shodan, otx: otx },
             enrichment: {
                 geolocation: geo.success ? geo : null,
-                asn: asn.success ? asn : null
+                asn: asn.success ? asn : null,
+                mitre: mappedTechniques,
+                actor: actorData
             },
             processing_time: `${Date.now() - startTime}ms`,
             timestamp: new Date().toISOString(),
@@ -241,6 +261,9 @@ app.get('/api/investigate/domain/:domain', async (req, res) => {
         if (ct.success && ct.certificates?.length) findings.push(`CT logs: ${ct.certificates.length} certificates found`);
         if (subdomains.success) findings.push(`Subdomains found: ${subdomains.count || 0}`);
 
+        const mappedTechniques = await MitreService.mapTechniques({ virustotal: vt, otx: otx });
+        const actorData = await ActorService.getActorByIOC({ providers: { virustotal: vt, otx: otx }, mitre: mappedTechniques });
+
         const assessment = {
             score: riskScore,
             risk: verdict,
@@ -249,7 +272,8 @@ app.get('/api/investigate/domain/:domain', async (req, res) => {
             sourcesResponded: activeSources,
             totalSources: 7,
             findings: findings.length ? findings : ['No threats detected'],
-            attackTechniques: []
+            attackTechniques: mappedTechniques,
+            actor: actorData
         };
 
         let aiSummary = null;
@@ -277,7 +301,9 @@ app.get('/api/investigate/domain/:domain', async (req, res) => {
                 dns: dns.success ? dns : null,
                 ssl: ssl.success ? ssl : null,
                 certificate_transparency: ct.success ? ct : null,
-                subdomains: subdomains.success ? subdomains : null
+                subdomains: subdomains.success ? subdomains : null,
+                mitre: mappedTechniques,
+                actor: actorData
             },
             processing_time: `${Date.now() - startTime}ms`,
             timestamp: new Date().toISOString(),
@@ -321,6 +347,9 @@ app.get('/api/investigate/hash/:hash', async (req, res) => {
         if (vt.success) findings.push(`VirusTotal: ${vt.detections} detections (${vt.ratio})`);
         if (otx.success && otx.pulses) findings.push(`OTX: ${otx.pulses} threat pulses`);
 
+        const mappedTechniques = await MitreService.mapTechniques({ virustotal: vt, otx: otx });
+        const actorData = await ActorService.getActorByIOC({ providers: { virustotal: vt, otx: otx }, mitre: mappedTechniques });
+
         const assessment = {
             score: riskScore,
             risk: verdict,
@@ -329,7 +358,8 @@ app.get('/api/investigate/hash/:hash', async (req, res) => {
             sourcesResponded: activeSources,
             totalSources: 2,
             findings: findings.length ? findings : ['No threats detected'],
-            attackTechniques: []
+            attackTechniques: mappedTechniques,
+            actor: actorData
         };
 
         let aiSummary = null;
@@ -352,6 +382,7 @@ app.get('/api/investigate/hash/:hash', async (req, res) => {
             },
             ai_summary: aiSummary,
             providers: { virustotal: vt, otx: otx },
+            enrichment: { mitre: mappedTechniques, actor: actorData },
             processing_time: `${Date.now() - startTime}ms`,
             timestamp: new Date().toISOString(),
             investigation_id: `inv_${Date.now()}`
@@ -397,6 +428,9 @@ app.get('/api/investigate/url', async (req, res) => {
         else if (riskScore >= 30) { verdict = 'MEDIUM'; color = '#3b82f6'; }
         else { verdict = 'LOW'; color = '#22c55e'; }
 
+        const mappedTechniques = await MitreService.mapTechniques({ urlscan: scanResult });
+        const actorData = await ActorService.getActorByIOC({ providers: { urlscan: scanResult }, mitre: mappedTechniques });
+
         const response = {
             ioc: { type: 'url', value: url },
             risk: {
@@ -408,6 +442,7 @@ app.get('/api/investigate/url', async (req, res) => {
                 total_sources: 1
             },
             providers: { urlscan: scanResult },
+            enrichment: { mitre: mappedTechniques, actor: actorData },
             processing_time: `${Date.now() - startTime}ms`,
             timestamp: new Date().toISOString(),
             investigation_id: `inv_${Date.now()}`

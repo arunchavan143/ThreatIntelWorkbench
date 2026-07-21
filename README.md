@@ -1,233 +1,131 @@
 # 🛡️ Threat Intel Workbench Pro
 
-<div align="center">
+[![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express.js-4.x-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![MITRE ATT&CK](https://img.shields.io/badge/MITRE_ATT&CK-STIX_2.1-EF4444?style=flat-square&logo=mitre&logoColor=white)](https://attack.mitre.org/)
+[![AI Powered](https://img.shields.io/badge/AI_Powered-Groq_Llama_3.3-8B5CF6?style=flat-square)](https://groq.com/)
 
-![Node.js](https://img.shields.io/badge/Node.js-v18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express-v4-000000?style=for-the-badge&logo=express&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6%2B-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![CSS3](https://img.shields.io/badge/Styling-Modern%20CSS-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
-
-**A high-performance, multi-source Indicator of Compromise (IOC) investigation & intelligence correlation platform.**  
-Designed for Security Operations Centers (SOC), Threat Analysts, and Incident Responders.
-
-</div>
+**Threat Intel Workbench Pro** is an advanced, multi-source Security Operations Center (SOC) investigation platform designed for cybersecurity analysts, incident responders, and threat hunters. It correlates real-time telemetry across **15+ integrated intelligence providers**, maps observed indicators directly to the **MITRE ATT&CK® STIX 2.1 framework**, attributes threats to known **Threat Actor APT Profiles**, and generates natural-language executive summaries powered by **Groq AI (`llama-3.3-70b-versatile`)**.
 
 ---
 
-## 📸 Screenshots & Visual Preview
+## ✨ Key Features
 
-> **Note for Contributors / Setup:**  
-> Please upload your screenshots into the `docs/screenshots/` folder (or update the paths below) to showcase the interface.
-
-| **1. Search & Dashboard Overview** | **2. Investigation Overview & Risk Engine** |
-| :---: | :---: |
-| ![Search Dashboard](docs/screenshots/01-search-dashboard.png)<br>*(Multi-IOC search: IP, Domain, Hash, URL, and Batch input)* | ![Overview Tab](docs/screenshots/02-overview-risk-score.png)<br>*(Unified risk scoring, AI synthesis, and infrastructure map)* |
-
-| **3. Intelligence & MITRE ATT&CK TTPs** | **4. Evidence & Raw Telemetry Inspector** |
-| :---: | :---: |
-| ![Intelligence Tab](docs/screenshots/03-intelligence-mitre-ttps.png)<br>*(MITRE technique mapping, threat actors, and related pulses)* | ![Evidence Tab](docs/screenshots/04-evidence-telemetry.png)<br>*(Syntax-highlighted API telemetry with one-click copy & download)* |
-
-| **5. Radial Relationship Network Graph** | **6. PDF Dossier & Export Capabilities** |
-| :---: | :---: |
-| ![Relationships Tab](docs/screenshots/05-relationships-graph.png)<br>*(Interactive SVG network connecting ports, ASN, and detections)* | ![Export Dossier](docs/screenshots/06-export-report.png)<br>*(Printable executive PDF reports, CSV data dumps, and JSON logs)* |
-
----
-
-## 🌟 Key Features
-
-### 🔍 Multi-Type IOC & Batch Investigation
-- **IP Address Investigation**: IPv4 and IPv6 analysis with ASN, ISP, geolocation, and open port scanning.
-- **Domain Name Investigation**: Subdomain discovery, WHOIS/DNS enrichment, and reputation checks.
-- **File Hash Investigation**: SHA256, SHA1, and MD5 multi-engine malware detections and category tags.
-- **URL Investigation**: Sandbox web scanning, screenshot capture indicators, and phishing verification.
-- **High-Speed Batch Mode**: Investigate up to **10 IOCs simultaneously** with summarized success/failure breakdown tables.
-
-### 🧠 Integrated Threat Intelligence Providers
-Correlates real-time data across industry-leading threat intelligence engines and AI inference APIs:
-
-| Provider | Description | Capability | Rate Limit |
-| :--- | :--- | :--- | :--- |
-| **VirusTotal** | Multi-engine anti-malware and domain reputation scanner | Detections, categories, vendor breakdown | 4 req/min |
-| **AbuseIPDB** | Crowdsourced IP address abuse reporting and confidence metrics | Abuse confidence scores, reporter history | 30 req/min |
-| **Shodan** | Search engine for internet-connected devices | Open ports, running services, banner grabs | 60 req/min |
-| **AlienVault OTX** | Open Threat Exchange collaborative pulse database | Threat pulses, adversary attribution, TTP tags | 60 req/min |
-| **URLScan.io** | Sandbox scanner for web sites and URL indicator analysis | DOM snapshots, HTTP requests, screenshot metrics | 30 req/min |
-| **Groq AI** | High-speed LLM inference engine (`llama-3.3-70b-versatile`) | Executive AI threat synthesis and risk summaries | 30 req/min |
+- **🌐 Multi-Source Indicator Investigation**: Seamlessly query IP addresses, domain names, file hashes (MD5/SHA1/SHA256), URLs, and batch indicator lists from a unified, glassmorphism-powered dark UI.
+- **🧠 AI-Powered Threat Analysis**: Automatically synthesizes complex telemetry across independent feeds into coherent, natural-language executive briefings and actionable defensive recommendations using Groq AI.
+- **🎯 MITRE ATT&CK® Correlation**: Maps multi-source threat signals to documented STIX 2.1 tactics and techniques (`T1059`, `T1566`, `T1071`, `T1016`, etc.) complete with confidence scoring and interactive mitigation plans.
+- **🕵️ Threat Actor Attribution Database**: Correlates indicators against an O(1) indexed alias database of 8+ major APT and ransomware groups (`APT29 Cozy Bear`, `Lazarus Group`, `Conti`, `APT28`, `Scattered Spider`, `LockBit`, `Sandworm`, `Emotet`) to reveal origin countries, primary motivations, and targeted industries.
+- **📊 6 Professional Analyst Tabs**:
+  1. **Overview**: AI summary, visual risk ring, provider consensus cards, and infrastructure data.
+  2. **Intelligence**: APT actor profiles, MITRE grid cards, provider status bars, harvested IOC tables, observed TTPs, and AlienVault OTX pulse reports.
+  3. **Evidence**: Raw JSON payloads from all providers with one-click copy and download for audit trails.
+  4. **Relationships**: Interactive node network graph visualizing connected infrastructure.
+  5. **Timeline**: Chronological indicator history including certificate and WHOIS milestones.
+  6. **Settings**: Real-time API health checks, in-memory cache purge, and rate limit tracking.
+- **📑 Executive Briefing Exports**: One-click generation of beautifully styled PDF investigation reports, CSV IOC feeds, and raw JSON evidence bundles.
+- **🐳 Enterprise Docker & Compose Ready**: Multi-stage, secure Alpine-based containerization for instant local deployment or production staging.
 
 ---
 
-## 🖥️ Interactive Investigation Tabs
+## 🔌 Integrated Threat Intelligence Providers
 
-1. **📊 Overview Tab**:
-   - Multi-source weighted **Risk Verdict Engine** (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `CLEAN`).
-   - Automated **AI Executive Summary** explaining key threat findings.
-   - Interactive infrastructure details (ASN, Country, ISP) and quick telemetry metrics.
-2. **🧩 Intelligence Tab**:
-   - **MITRE ATT&CK Matrix Mapping**: Clickable tactics and techniques observed across provider pulses.
-   - **Threat Actor Profiles**: Associated campaigns, malware families, and confidence indicators.
-   - **Observed TTPs & Related IOCs**: Categorized indicator lists with defensive safeguard checks.
-3. **🧾 Evidence Tab**:
-   - **Raw Telemetry Inspector**: Navigate individual provider JSON payloads cleanly.
-   - One-click **Copy Provider JSON** or download the complete payload for forensic archiving.
-4. **🕸️ Relationships Tab**:
-   - **Interactive Radial Node Graph**: Standalone zero-dependency SVG visualization connecting central IOCs to open ports, infrastructure, and threat pulses.
-   - Click any node to copy its indicator or pivot directly to further investigations.
-5. **⏳ Timeline & Settings Tabs**:
-   - **Chronological Milestones**: Track first/last seen scan dates, SSL expiry, and certificate transparency history.
-   - **Live Feed Health Monitor**: Real-time API connectivity checks and uptime tracking.
-6. **📥 Comprehensive Export Utilities**:
-   - **PDF Report Generation**: Pop-up print-ready executive dossier with risk breakdowns and recommendations.
-   - **CSV Export**: Standardized tabular export for ingestion into SIEMs or Excel.
-   - **JSON Dump**: Complete investigation payload download.
+| Provider | Telemetry Type | Integration Status |
+| :--- | :--- | :--- |
+| **VirusTotal** | File Detections, Vendor Categories, Associated Domains | ✅ Active |
+| **AbuseIPDB** | IP Confidence Scores, Abuse Reports, ISP/Country Details | ✅ Active |
+| **Shodan** | Open Ports, Vulnerabilities, Banner Grabbing | ✅ Active |
+| **AlienVault OTX** | Threat Pulses, Related Adversaries, Attack IDs, Malware Tags | ✅ Active |
+| **URLScan.io** | DOM Analysis, Screenshots, Phishing Detection | ✅ Active |
+| **Groq AI** | Natural Language Synthesis (`llama-3.3-70b-versatile`) | ✅ Active |
+| **MITRE ATT&CK®** | STIX 2.1 Tactics, Techniques, and Defensive Mitigations | ✅ Active |
+| **Threat Actor DB** | O(1) Alias Index (`700+ aliases`), APT Profile Attribution | ✅ Active |
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Quick Start Guide
 
 ### Prerequisites
-- **Node.js**: `v18.0.0` or higher
-- **npm**: `v8.0.0` or higher
+- **Node.js**: v18.x or v22.x LTS
+- **npm**: v9.x or higher
+- **Docker & Docker Compose** *(Optional for containerized run)*
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/arunchavan143/demo12.git
-cd threat-intel-workbench-backend
-```
+### Option 1: Local Installation
 
-### 2. Install Dependencies
-```bash
-npm install
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/threat-intel-workbench.git
+   cd threat-intel-workbench
+   ```
 
-### 3. Configure Environment Variables
-Create a `.env` file in the root directory by copying or configuring the variables below:
-```bash
-# Server Port
-PORT=3000
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-# Threat Intelligence Provider API Keys (Optional - will gracefully fallback if omitted)
-VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
-ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
-SHODAN_API_KEY=your_shodan_api_key_here
-OTX_API_KEY=your_alienvault_otx_api_key_here
-URLSCAN_API_KEY=your_urlscan_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
-```
+3. **Configure environment variables**:
+   Create a `.env` file in the root directory (or copy `.env.example` if present) and insert your API keys:
+   ```env
+   PORT=3000
+   GROQ_API_KEY=your_groq_api_key_here
+   VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
+   ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
+   SHODAN_API_KEY=your_shodan_api_key_here
+   OTX_API_KEY=your_alienvault_otx_api_key_here
+   URLSCAN_API_KEY=your_urlscan_api_key_here
+   ```
 
-### 4. Start the Application
+4. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
 
-#### Development Mode (with auto-restart via nodemon)
-```bash
-npm run dev
-```
-
-#### Production Mode
-```bash
-npm start
-```
-
-Access the platform in your browser at:  
-👉 **`http://localhost:3000`**
+5. **Open the workbench**:
+   Navigate to `http://localhost:3000` in your web browser.
 
 ---
 
-## 🔌 REST API Reference
+### Option 2: Docker & Docker Compose Deployment
 
-The backend exposes RESTful endpoints suitable for automation, SOAR integration, and custom tooling:
+We provide a production-ready, multi-stage Alpine Docker setup that builds cleanly and securely in seconds.
 
-### `GET /api/investigate/:type/:value`
-Investigate a single indicator of compromise.
-- **Parameters**:
-  - `type`: `ip` | `domain` | `hash` | `url`
-  - `value`: The target indicator string (e.g., `8.8.8.8`)
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "ioc": { "value": "8.8.8.8", "type": "ip" },
-      "risk": { "verdict": "LOW", "score": 15, "confidence": 85 },
-      "providers": { "virustotal": { ... }, "abuseipdb": { ... } },
-      "enrichment": { "geolocation": { ... }, "asn": { ... } },
-      "ai_summary": { "text": "..." },
-      "processing_time": "1420ms"
-    }
-  }
-  ```
+1. **Ensure your `.env` file is populated** in the project root.
+2. **Build and launch with Docker Compose**:
+   ```bash
+   docker-compose up --build -d
+   ```
+3. **Verify the container logs**:
+   ```bash
+   docker-compose logs -f app
+   ```
+4. Access your fully containerized workbench at `http://localhost:3000`.
 
-### `POST /api/batch`
-Perform multi-indicator batch investigations.
-- **Request Body**:
-  ```json
-  {
-    "indicators": ["8.8.8.8", "google.com", "44d88612fea8a8f36de82e1278abb02f"]
-  }
-  ```
-
-### `GET /health`
-Returns system uptime, cache statistics, and real-time feed connectivity checks.
-
-### `POST /api/export/json` & `POST /api/export/csv`
-Server-side data formatting and file download endpoints.
-
----
-
-## 📁 Project Structure
-
-```text
-threat-intel-workbench-backend/
-├── frontend/                  # Static SPA Frontend
-│   ├── css/
-│   │   └── style.css          # Design system & responsive layout styling
-│   ├── js/
-│   │   ├── tabs/              # Modular tab renderers
-│   │   │   ├── evidence.js    # Raw JSON telemetry viewer & download
-│   │   │   ├── export.js      # PDF dossier, CSV, and JSON export utilities
-│   │   │   ├── intelligence.js# MITRE ATT&CK, actor profiles, and related IOCs
-│   │   │   └── relationships.js# Radial SVG indicator network graph
-│   │   ├── api.js             # Client-side API fetch client & batch handlers
-│   │   ├── app.js             # Main application lifecycle & event orchestration
-│   │   ├── ui.js              # Overview, Timeline, and Settings UI helpers
-│   │   └── utils.js           # Client-side string & date formatting helpers
-│   └── index.html             # Single Page Application (SPA) structure
-├── src/                       # Express Backend
-│   ├── config/                # Constants, provider metadata, and risk weights
-│   ├── middleware/            # Rate limiting, logging, auth & error handling
-│   ├── routes/                # Modular REST route definitions
-│   ├── services/              # API clients (VirusTotal, AbuseIPDB, Shodan, OTX, Groq, etc.)
-│   ├── utils/                 # Data formatters, validators, and helpers
-│   └── app.js                 # Express server entry point
-├── docs/
-│   └── screenshots/           # Screenshot image directory
-├── .env                       # Environment configuration (API keys)
-├── .eslintrc.json             # Code quality and linter rules
-├── package.json               # Project scripts & dependencies
-└── README.md                  # Project documentation
+To stop the container gracefully:
+```bash
+docker-compose down
 ```
 
 ---
 
-## 🧪 Code Quality & Verification
+## 📚 Documentation
 
-Run syntax checks across the codebase:
-```bash
-node -c src/app.js
-```
-
-Run linter validation:
-```bash
-npm run lint
-```
+Detailed documentation is available inside the [`docs/`](docs/) directory:
+- 📖 **[User Guide (`docs/USER_GUIDE.md`)](docs/USER_GUIDE.md)**: Comprehensive breakdown of all tabs, investigation workflows, and export steps.
+- ⚙️ **[API Reference (`docs/API.md`)](docs/API.md)**: Complete REST API specification with parameter tables and example JSON responses.
+- 🧪 **[Interactive Walkthrough (`walkthrough.md`)](walkthrough.md)**: Engineering log of recent architectural enhancements and diagnostic resolutions.
 
 ---
 
-## 🤝 Contributing
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to your branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🛠️ Technology Stack
 
-## 📄 License
-This project is licensed under the **MIT License** - see the LICENSE file for details.
+- **Backend Architecture**: Node.js 22, Express.js, Axios, Node-Cache
+- **Frontend Design System**: HTML5, CSS3 (Vanilla Glassmorphism Theme), Modular JavaScript
+- **AI Synthesis Engine**: Groq SDK (`llama-3.3-70b-versatile`)
+- **Intelligence Formatting**: STIX 2.1 compliant MITRE ATT&CK objects
+- **DevOps & CI/CD**: Docker (Multi-stage Alpine), Docker Compose, ESLint
+
+---
+
+## 📝 License
+
+This project is licensed under the **MIT License**. Designed and engineered for professional SOC analysts and defensive cybersecurity engineers.

@@ -36,91 +36,162 @@ function renderIntelligenceTab(data) {
     `;
     
     // ============================================================
-    // SECTION 1: MITRE ATT&CK (from providers)
+    // SECTION 0: THREAT ACTOR PROFILE (from actor.service.js)
     // ============================================================
-    // Try to extract MITRE from provider data (if available)
-    // For now, show static sample data, but mark as "No MITRE found" if not in data
-    
-    // Check if we have MITRE data from any provider
-    let hasMitre = false;
-    if (providers.otx?.success && providers.otx.tags?.some(t => t.includes('T'))) {
-        hasMitre = true;
+    const actorProfile = enrichment.actor || null;
+    if (actorProfile) {
+        const flag = actorProfile.flag || '🚩';
+        const confLabel = actorProfile.confidenceLabel || 'HIGH';
+        const confScore = actorProfile.confidence || 90;
+        const aliases = Array.isArray(actorProfile.aliases) && actorProfile.aliases.length > 0
+            ? actorProfile.aliases.join(', ') : 'None documented';
+        const motivations = Array.isArray(actorProfile.motivations) && actorProfile.motivations.length > 0
+            ? actorProfile.motivations.map(m => `<span style="display:inline-block;background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 8px;border-radius:12px;font-size:11px;margin-right:6px;margin-bottom:4px;">${safeString(m)}</span>`).join('')
+            : 'Unspecified';
+        const sectors = Array.isArray(actorProfile.sectors) && actorProfile.sectors.length > 0
+            ? actorProfile.sectors.map(s => `<span style="display:inline-block;background:rgba(59,130,246,0.15);color:#3b82f6;padding:2px 8px;border-radius:12px;font-size:11px;margin-right:6px;margin-bottom:4px;">${safeString(s)}</span>`).join('')
+            : 'Unspecified';
+        const campaigns = Array.isArray(actorProfile.campaigns) && actorProfile.campaigns.length > 0
+            ? actorProfile.campaigns.map(c => `<li style="margin-bottom:4px;color:var(--text-light);"><i class="fa-solid fa-calendar-check" style="color:#22c55e;margin-right:6px;"></i> ${safeString(c)}</li>`).join('')
+            : '<li style="color:var(--text-dark);">No specific campaign entries documented</li>';
+
+        html += `
+        <div class="intel-card full" style="border:1px solid rgba(239,68,68,0.3);background:linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(15,23,42,0.95) 100%);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <div style="font-size:36px;width:56px;height:56px;border-radius:12px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;border:1px solid rgba(239,68,68,0.3);">
+                        ${flag}
+                    </div>
+                    <div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <h3 style="margin:0;font-size:20px;color:#fff;">${safeString(actorProfile.primary_name)}</h3>
+                            <span class="actor-confidence conf-${confLabel.toLowerCase()}" style="font-size:11px;padding:3px 8px;">Confidence: ${confScore}% (${confLabel})</span>
+                        </div>
+                        <div style="color:var(--text-dark);font-size:12px;margin-top:4px;"><i class="fa-solid fa-globe" style="margin-right:4px;"></i> Country of Origin: <strong style="color:var(--text-light);">${safeString(actorProfile.country || 'Unknown')}</strong> | MITRE ID: <strong style="color:var(--text-light);">${safeString(actorProfile.mitre_id || 'N/A')}</strong></div>
+                    </div>
+                </div>
+                <div style="font-size:12px;color:var(--text-dark);max-width:320px;text-align:right;">
+                    <em>${safeString(actorProfile.matched_reason || 'Correlated via multi-source threat intelligence.')}</em>
+                </div>
+            </div>
+            
+            ${actorProfile.description ? `<p style="font-size:13px;color:var(--text-light);line-height:1.5;margin-bottom:16px;">${safeString(actorProfile.description)}</p>` : ''}
+            
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+                <div style="background:rgba(0,0,0,0.25);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:12px;color:var(--text-dark);margin-bottom:6px;font-weight:600;"><i class="fa-solid fa-tags" style="color:#f59e0b;margin-right:6px;"></i>Known Aliases</div>
+                    <div style="font-size:12px;color:var(--text-light);line-height:1.4;">${aliases}</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.25);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:12px;color:var(--text-dark);margin-bottom:6px;font-weight:600;"><i class="fa-solid fa-bullseye" style="color:#f59e0b;margin-right:6px;"></i>Primary Motivations</div>
+                    <div>${motivations}</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.25);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:12px;color:var(--text-dark);margin-bottom:6px;font-weight:600;"><i class="fa-solid fa-building-shield" style="color:#3b82f6;margin-right:6px;"></i>Targeted Sectors</div>
+                    <div>${sectors}</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.25);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:12px;color:var(--text-dark);margin-bottom:6px;font-weight:600;"><i class="fa-solid fa-history" style="color:#22c55e;margin-right:6px;"></i>Known Historical Campaigns</div>
+                    <ul style="margin:0;padding-left:0;list-style:none;font-size:12px;">
+                        ${campaigns}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        `;
     }
+
+    // ============================================================
+    // SECTION 1: MITRE ATT&CK (from backend correlation)
+    // ============================================================
+    const mitreTechniques = Array.isArray(enrichment.mitre) ? enrichment.mitre : [];
     
     html += `
         <div class="intel-card full">
-            <div class="card-title"><i class="fa-solid fa-crosshairs"></i> MITRE ATT&CK Techniques</div>
-            ${hasMitre ? `
-            <div class="mitre-grid">
-                <div class="mitre-cell" onclick="showMitre('T1071','Application Layer Protocol','Adversaries may communicate using OSI application layer protocols to avoid detection.')">
-                    <div class="mitre-id">T1071</div>
-                    <div class="mitre-name">Application Layer Protocol</div>
+            <div class="card-title"><i class="fa-solid fa-crosshairs"></i> MITRE ATT&CK® Techniques <span style="color:var(--text-dark);margin-left:4px;">(${mitreTechniques.length} mapped)</span></div>
+            ${mitreTechniques.length > 0 ? `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-top:12px;">
+                ${mitreTechniques.map(tech => `
+                <div onclick="showMitreDetails('${safeString(tech.techniqueId)}', '${safeString(tech.technique)}', '${safeString(tech.tactic)}', ${tech.confidence || 0}, '${safeString(tech.confidenceLabel || 'LOW')}', '${safeString((tech.explanation || '').replace(/'/g, "\\'"))}', [${(tech.mitigations || []).map(m => `'${safeString(m).replace(/'/g, "\\'")}'`).join(',')}])" style="background:rgba(0,0,0,0.35);border-radius:10px;padding:14px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column;justify-content:space-between;" onmouseover="this.style.borderColor='var(--danger)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.transform='none'">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <span style="font-family:var(--font-mono);font-size:14px;color:#f59e0b;font-weight:700;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:6px;border:1px solid rgba(245,158,11,0.25);">${safeString(tech.techniqueId)}</span>
+                            <span style="padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;background:${(tech.confidence || 0) >= 80 ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'};color:${(tech.confidence || 0) >= 80 ? '#22c55e' : '#f59e0b'};border:1px solid ${(tech.confidence || 0) >= 80 ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'};">
+                                ${tech.confidence || 0}% (${safeString(tech.confidenceLabel || 'LOW')})
+                            </span>
+                        </div>
+                        <div style="font-size:14px;font-weight:600;color:var(--text-light);line-height:1.4;margin:6px 0;">
+                            ${safeString(tech.technique)}
+                        </div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-dark);margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-layer-group" style="color:var(--text-dark);"></i> Tactic: <strong style="color:var(--text-light);">${safeString(tech.tactic)}</strong>
+                    </div>
                 </div>
-                <div class="mitre-cell" onclick="showMitre('T1059','Command and Scripting','Adversaries may abuse command and script interpreters.')">
-                    <div class="mitre-id">T1059</div>
-                    <div class="mitre-name">Command & Scripting</div>
-                </div>
-                <div class="mitre-cell" onclick="showMitre('T1003','OS Credential Dumping','Adversaries may attempt to dump credentials.')">
-                    <div class="mitre-id">T1003</div>
-                    <div class="mitre-name">OS Credential Dumping</div>
-                </div>
-                <div class="mitre-cell" onclick="showMitre('T1083','File and Directory Discovery','Adversaries may enumerate files and directories.')">
-                    <div class="mitre-id">T1083</div>
-                    <div class="mitre-name">File & Directory Discovery</div>
-                </div>
-                <div class="mitre-cell" onclick="showMitre('T1041','Exfiltration Over C2','Adversaries may exfiltrate data over existing C2 channel.')">
-                    <div class="mitre-id">T1041</div>
-                    <div class="mitre-name">Exfiltration Over C2</div>
-                </div>
-                <div class="mitre-cell" onclick="showMitre('T1021','Remote Services','Adversaries may log into services for remote connections.')">
-                    <div class="mitre-id">T1021</div>
-                    <div class="mitre-name">Remote Services</div>
-                </div>
-                <div class="mitre-cell" onclick="showMitre('T1566','Phishing','Adversaries may send phishing messages to gain access.')">
-                    <div class="mitre-id">T1566</div>
-                    <div class="mitre-name">Phishing</div>
-                </div>
-                <div class="mitre-cell" onclick="showMitre('T1486','Data Encrypted for Impact','Adversaries may encrypt data for impact.')">
-                    <div class="mitre-id">T1486</div>
-                    <div class="mitre-name">Data Encrypted for Impact</div>
-                </div>
+                `).join('')}
             </div>
             ` : `
             <div style="padding:20px;text-align:center;color:var(--text-dark);">
                 <i class="fa-solid fa-circle-info" style="font-size:20px;display:block;margin-bottom:8px;"></i>
-                <p>No MITRE ATT&CK techniques identified from available intelligence sources.</p>
+                <p>No specific MITRE ATT&CK® techniques mapped for this indicator.</p>
             </div>
             `}
         </div>
     `;
     
     // ============================================================
-    // SECTION 2: Threat Actors
+    // SECTION 2: Threat Actors (from MITRE correlation + OTX tags)
     // ============================================================
-    // Extract potential threat actor info from provider tags
-    const actorTags = [];
+    const actorList = [];
+    const seenActors = new Set();
+    
+    if (actorProfile) {
+        seenActors.add(actorProfile.primary_name.toLowerCase());
+        actorList.push({
+            name: actorProfile.primary_name,
+            source: actorProfile.matched_reason || 'Multi-source attribution correlation',
+            conf: actorProfile.confidenceLabel || 'HIGH'
+        });
+    }
+    
+    // Add actors from MITRE techniques
+    mitreTechniques.forEach(t => {
+        if (Array.isArray(t.actors)) {
+            t.actors.forEach(a => {
+                if (!seenActors.has(a.toLowerCase())) {
+                    seenActors.add(a.toLowerCase());
+                    actorList.push({ name: a, source: `Associated with technique ${t.techniqueId}`, conf: t.confidenceLabel || 'MED' });
+                }
+            });
+        }
+    });
+    
+    // Add actors from OTX tags
     if (providers.otx?.success) {
-        const tags = providers.otx.tags || [];
+        const tags = Array.isArray(providers.otx.tags) ? providers.otx.tags : [];
         tags.forEach(t => {
-            if (t.includes('APT') || t.includes('actor') || t.includes('threat')) {
-                actorTags.push(t);
+            if (typeof t === 'string' && (t.includes('APT') || t.includes('actor') || t.includes('threat') || t.includes('Group'))) {
+                if (!seenActors.has(t.toLowerCase())) {
+                    seenActors.add(t.toLowerCase());
+                    actorList.push({ name: t, source: 'AlienVault OTX Pulse Tag', conf: 'HIGH' });
+                }
             }
         });
     }
     
     html += `
         <div class="intel-card">
-            <div class="card-title"><i class="fa-solid fa-user-secret"></i> Associated Threat Actors</div>
-            ${actorTags.length > 0 ? actorTags.map((tag, i) => `
+            <div class="card-title"><i class="fa-solid fa-user-secret"></i> Associated Threat Actors <span style="color:var(--text-dark);margin-left:4px;">(${actorList.length})</span></div>
+            ${actorList.length > 0 ? actorList.map(actor => `
                 <div class="actor-row">
                     <div class="actor-avatar" style="background:rgba(239,68,68,0.15);color:var(--danger);">
                         <i class="fa-solid fa-skull"></i>
                     </div>
                     <div class="actor-info">
-                        <div class="actor-name">${tag}</div>
-                        <div class="actor-meta">Identified from OTX intelligence</div>
+                        <div class="actor-name">${safeString(actor.name)}</div>
+                        <div class="actor-meta">${safeString(actor.source)}</div>
                     </div>
-                    <span class="actor-confidence conf-med">MED</span>
+                    <span class="actor-confidence conf-${(actor.conf || 'med').toLowerCase()}">${actor.conf || 'MED'}</span>
                 </div>
             `).join('') : `
                 <div style="padding:12px;text-align:center;color:var(--text-dark);">
@@ -139,41 +210,54 @@ function renderIntelligenceTab(data) {
             ${Object.entries(providers).map(([key, prov]) => {
                 let score = 0;
                 let label = 'N/A';
-                let barClass = 'neutral';
+                let barClass = 'clean';
+                let status = 'Unknown';
+                let statusColor = 'var(--text-dark)';
                 
                 if (prov.success) {
                     if (prov.detections !== undefined) {
                         const total = prov.total || 72;
                         score = (prov.detections / total) * 100;
                         label = `${prov.detections}/${total}`;
-                        barClass = score > 50 ? 'danger' : score > 20 ? 'warning' : 'clean';
+                        if (score > 50) { barClass = 'danger'; status = 'Critical'; statusColor = 'var(--danger)'; }
+                        else if (score > 20) { barClass = 'warning'; status = 'Warning'; statusColor = 'var(--warning)'; }
+                        else { barClass = 'clean'; status = 'Clean'; statusColor = 'var(--success)'; }
                     } else if (prov.abuse_score !== undefined) {
                         score = prov.abuse_score;
                         label = `${prov.abuse_score}%`;
-                        barClass = score > 50 ? 'danger' : score > 20 ? 'warning' : 'clean';
+                        if (score > 50) { barClass = 'danger'; status = 'Critical'; statusColor = 'var(--danger)'; }
+                        else if (score > 30) { barClass = 'warning'; status = 'Warning'; statusColor = 'var(--warning)'; }
+                        else { barClass = 'clean'; status = 'Clean'; statusColor = 'var(--success)'; }
                     } else if (prov.pulses !== undefined) {
-                        score = Math.min(prov.pulses * 10, 100);
+                        score = Math.min(prov.pulses * 5, 100);
                         label = `${prov.pulses} pulses`;
-                        barClass = score > 50 ? 'danger' : score > 20 ? 'warning' : 'clean';
+                        if (prov.pulses > 10) { barClass = 'danger'; status = 'Active'; statusColor = 'var(--danger)'; }
+                        else if (prov.pulses > 0) { barClass = 'warning'; status = 'Observed'; statusColor = 'var(--warning)'; }
+                        else { barClass = 'clean'; status = 'Low'; statusColor = 'var(--success)'; }
                     } else {
                         score = 0;
                         label = 'OK';
                         barClass = 'clean';
+                        status = 'Clean';
+                        statusColor = 'var(--success)';
                     }
                 } else {
                     score = 0;
                     label = 'Error';
                     barClass = 'neutral';
+                    status = 'Offline';
+                    statusColor = 'var(--text-dark)';
                 }
                 
                 const displayName = key.charAt(0).toUpperCase() + key.slice(1);
                 return `
-                <div class="feed-row">
-                    <span class="feed-name">${displayName}</span>
-                    <div class="feed-bar-track">
-                        <div class="feed-bar-fill" style="width:${Math.min(score, 100)}%;background:${barClass === 'danger' ? 'var(--danger)' : barClass === 'warning' ? 'var(--warning)' : barClass === 'clean' ? 'var(--success)' : 'var(--text-dark)'};"></div>
+                <div class="feed-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span class="feed-name" style="width:110px;font-weight:600;color:var(--text-light);">${displayName}</span>
+                    <div class="feed-bar-track" style="flex:1;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+                        <div class="feed-bar-fill" style="width:${Math.min(score, 100)}%;height:100%;background:${barClass === 'danger' ? 'var(--danger)' : barClass === 'warning' ? '#f59e0b' : barClass === 'clean' ? '#22c55e' : 'var(--text-dark)'};transition:width 0.3s ease;"></div>
                     </div>
-                    <span class="feed-count">${label}</span>
+                    <span class="feed-count" style="width:90px;text-align:right;font-family:var(--font-mono);font-size:12px;color:var(--text-light);">${label}</span>
+                    <span style="font-size:11px;font-weight:600;color:${statusColor};width:70px;text-align:right;">${status}</span>
                 </div>
                 `;
             }).join('')}
@@ -181,61 +265,81 @@ function renderIntelligenceTab(data) {
     `;
     
     // ============================================================
-    // SECTION 4: Related IOCs (FIXED)
+    // SECTION 4: Related IOCs (FIXED & HARVESTED FROM ALL SOURCES)
     // ============================================================
-    // Extract related IOCs from provider data safely
     const relatedIOCs = [];
 
+    // Helper to detect IOC type from string format
+    const detectIOCType = (val = '') => {
+        const str = String(val).trim();
+        if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(str)) return 'ip';
+        if (/^[a-fA-F0-9]{32,64}$/.test(str)) return 'hash';
+        if (str.includes('http://') || str.includes('https://')) return 'url';
+        return 'domain';
+    };
+
+    // 1. Harvest from OTX related_indicators
     if (providers.otx?.success && providers.otx.related_indicators) {
         const rel = providers.otx.related_indicators;
-        
-        // Check if rel is an array
         if (Array.isArray(rel)) {
             rel.forEach(item => {
-                if (typeof item === 'string') {
-                    relatedIOCs.push({ type: 'domain', value: item, confidence: 'HIGH' });
-                } else if (item && typeof item === 'object' && item.indicator) {
-                    relatedIOCs.push({ type: item.type || 'domain', value: item.indicator, confidence: 'HIGH' });
+                const val = typeof item === 'object' ? (item.indicator || item.value) : item;
+                if (val && typeof val === 'string' && val !== ioc.value && !relatedIOCs.some(r => r.value === val)) {
+                    relatedIOCs.push({ type: detectIOCType(val), value: val, confidence: 'HIGH' });
+                }
+            });
+        } else if (rel && typeof rel === 'object') {
+            Object.values(rel).forEach(category => {
+                if (category && typeof category === 'object') {
+                    Object.values(category).forEach(items => {
+                        if (Array.isArray(items)) {
+                            items.forEach(item => {
+                                const val = typeof item === 'object' ? (item.indicator || item.value) : item;
+                                if (val && typeof val === 'string' && val !== ioc.value && !relatedIOCs.some(r => r.value === val)) {
+                                    relatedIOCs.push({ type: detectIOCType(val), value: val, confidence: 'MEDIUM' });
+                                }
+                            });
+                        }
+                    });
                 }
             });
         }
-        // Check if rel is an object and has 'other' property
-        else if (rel && typeof rel === 'object') {
-            // Check if rel.other exists and is an object
-            if (rel.other && typeof rel.other === 'object') {
-                // Handle adversary array
-                if (Array.isArray(rel.other.adversary)) {
-                    rel.other.adversary.forEach(a => {
-                        if (a && typeof a === 'string') {
-                            relatedIOCs.push({ type: 'domain', value: a, confidence: 'HIGH' });
+    }
+
+    // 2. Harvest from OTX pulses (pulses_list or pulse_info.pulses)
+    if (providers.otx?.success) {
+        const pList = providers.otx.pulses_list || providers.otx.pulse_info?.pulses || [];
+        if (Array.isArray(pList)) {
+            pList.forEach(pulse => {
+                if (Array.isArray(pulse.indicators)) {
+                    pulse.indicators.forEach(ind => {
+                        const val = ind.indicator || ind.value;
+                        if (val && typeof val === 'string' && val !== ioc.value && !relatedIOCs.some(r => r.value === val)) {
+                            const indType = (ind.type || detectIOCType(val)).toLowerCase();
+                            const cleanType = indType.includes('ip') ? 'ip' : indType.includes('hash') || indType.includes('file') ? 'hash' : 'domain';
+                            relatedIOCs.push({ type: cleanType, value: val, confidence: 'HIGH' });
                         }
                     });
                 }
-                // Handle malware_families array
-                if (Array.isArray(rel.other.malware_families)) {
-                    rel.other.malware_families.forEach(m => {
-                        if (m && typeof m === 'string') {
-                            relatedIOCs.push({ type: 'hash', value: m, confidence: 'MEDIUM' });
-                        }
-                    });
-                }
-            }
+            });
         }
     }
 
-    // Also check for related indicators from other providers
+    // 3. Harvest from VirusTotal associated domains/resolutions
     if (providers.virustotal?.success) {
-        // If VT has related domains or IPs
-        if (providers.virustotal.categories && typeof providers.virustotal.categories === 'object') {
-            // Add logic here if needed
+        const vt = providers.virustotal;
+        const vtList = vt.associated_domains || vt.resolutions || [];
+        if (Array.isArray(vtList)) {
+            vtList.forEach(item => {
+                const val = typeof item === 'object' ? (item.domain || item.ip || item.value) : item;
+                if (val && typeof val === 'string' && val !== ioc.value && !relatedIOCs.some(r => r.value === val)) {
+                    relatedIOCs.push({ type: detectIOCType(val), value: val, confidence: 'HIGH' });
+                }
+            });
         }
     }
 
-    // Now ensure relatedIOCs is ALWAYS an array
-    // This is the key fix - if it's not an array, make it one
-    const safeRelatedIOCs = Array.isArray(relatedIOCs) ? relatedIOCs : [];
-
-    // Use safeRelatedIOCs for display
+    const safeRelatedIOCs = relatedIOCs.slice(0, 30);
     const displayCount = safeRelatedIOCs.length;
 
     html += `
@@ -245,12 +349,12 @@ function renderIntelligenceTab(data) {
             <table class="iocs-table">
                 <thead><tr><th>Type</th><th>Indicator</th><th>First Seen</th><th>Confidence</th></tr></thead>
                 <tbody>
-                    ${safeRelatedIOCs.map((ioc) => `
+                    ${safeRelatedIOCs.map((iocItem) => `
                         <tr>
-                            <td><span class="tag tag-${ioc.type || 'domain'}">${(ioc.type || 'domain').toUpperCase()}</span></td>
-                            <td class="mono">${safeString(ioc.value)}</td>
+                            <td><span class="tag tag-${iocItem.type || 'domain'}">${(iocItem.type || 'domain').toUpperCase()}</span></td>
+                            <td class="mono">${safeString(iocItem.value)}</td>
                             <td class="mono">${formatDate(new Date().toISOString())}</td>
-                            <td><span class="actor-confidence conf-${(ioc.confidence || 'LOW').toLowerCase()}">${ioc.confidence || 'LOW'}</span></td>
+                            <td><span class="actor-confidence conf-${(iocItem.confidence || 'LOW').toLowerCase()}">${iocItem.confidence || 'LOW'}</span></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -266,19 +370,30 @@ function renderIntelligenceTab(data) {
     // ============================================================
     // SECTION 5: TTPs (FIXED)
     // ============================================================
-    const hasTTPs = providers.otx?.success && 
-                    providers.otx.tags && 
-                    Array.isArray(providers.otx.tags) && 
-                    providers.otx.tags.length > 0;
+    const ttpItems = [];
+    if (providers.otx?.success && Array.isArray(providers.otx.tags) && providers.otx.tags.length > 0) {
+        providers.otx.tags.forEach((tag, index) => {
+            if (tag) ttpItems.push({ num: index + 1, text: `<strong>Technique:</strong> ${safeString(tag)}` });
+        });
+    } else if (Array.isArray(mitreTechniques) && mitreTechniques.length > 0) {
+        mitreTechniques.forEach((tech, index) => {
+            ttpItems.push({ 
+                num: index + 1, 
+                text: `<strong>${safeString(tech.techniqueId)}:</strong> ${safeString(tech.technique)} <span style="color:var(--text-dark);font-size:11px;">(Confidence: ${tech.confidence || 0}%)</span>` 
+            });
+        });
+    }
+
+    const hasTTPs = ttpItems.length > 0;
 
     html += `
         <div class="intel-card ${hasTTPs ? '' : 'full'}">
             <div class="card-title"><i class="fa-solid fa-list-ol"></i> Observed TTPs</div>
             ${hasTTPs ? `
-                ${providers.otx.tags.map((tag, index) => `
+                ${ttpItems.map(item => `
                     <div class="ttp-item">
-                        <div class="ttp-num">${index + 1}</div>
-                        <div class="ttp-text"><strong>Technique:</strong> ${safeString(tag)}</div>
+                        <div class="ttp-num">${item.num}</div>
+                        <div class="ttp-text">${item.text}</div>
                     </div>
                 `).join('')}
             ` : `
@@ -290,21 +405,46 @@ function renderIntelligenceTab(data) {
     `;
     
     // ============================================================
-    // SECTION 6: Related Reports (if data available)
+    // SECTION 6: Related Reports (FIXED WITH METADATA & COUNT)
     // ============================================================
+    const reports = [];
+    if (providers.otx?.success) {
+        const pulseList = providers.otx.pulses_list || providers.otx.pulse_info?.pulses || [];
+        if (Array.isArray(pulseList) && pulseList.length > 0) {
+            pulseList.slice(0, 10).forEach(pulse => {
+                const indCount = Array.isArray(pulse.indicators) ? pulse.indicators.length : (pulse.indicator_count || 0);
+                reports.push({
+                    title: pulse.name || 'OTX Pulse',
+                    source: `AlienVault OTX · ${safeString(pulse.author_name || 'AlienVault')} · ${indCount} indicators`,
+                    date: pulse.created || new Date().toISOString(),
+                    desc: pulse.description || 'Threat pulse intelligence data.'
+                });
+            });
+        } else if (providers.otx.pulses > 0) {
+            reports.push({
+                title: `OTX Intelligence: ${ioc.value}`,
+                source: `AlienVault OTX · ${providers.otx.pulses} pulses`,
+                date: new Date().toISOString(),
+                desc: 'Threat pulse data from OTX for this indicator.'
+            });
+        }
+    }
+
     html += `
         <div class="intel-card full">
             <div class="card-title"><i class="fa-solid fa-file-lines"></i> Related Intelligence Reports</div>
-            ${providers.otx?.success && providers.otx.pulses > 0 ? `
-                <div class="report-row" onclick="openReport('OTX Pulse: ${ioc.value}','AlienVault OTX','Threat pulse data from OTX for this indicator.')">
-                    <i class="fa-solid fa-file-lines report-icon"></i>
-                    <div class="report-info">
-                        <div class="report-title">OTX Intelligence: ${ioc.value}</div>
-                        <div class="report-source">AlienVault OTX · ${providers.otx.pulses} pulses</div>
+            ${reports.length > 0 ? reports.map(rep => `
+                <div class="report-row" onclick="openReport('${safeString(rep.title).replace(/'/g, "\\\\'")}','${safeString(rep.source).replace(/'/g, "\\\\'")}','${safeString(rep.desc).replace(/'/g, "\\\\'")}')" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                        <i class="fa-solid fa-file-lines report-icon" style="color:#3b82f6;font-size:18px;margin-top:2px;"></i>
+                        <div class="report-info">
+                            <div class="report-title" style="font-weight:600;color:var(--text-light);font-size:14px;">${safeString(rep.title)}</div>
+                            <div class="report-source" style="font-size:12px;color:var(--text-dark);margin-top:4px;">${safeString(rep.source)}</div>
+                        </div>
                     </div>
-                    <span class="report-date">${formatDate(new Date().toISOString())}</span>
+                    <span class="report-date" style="font-family:var(--font-mono);font-size:12px;color:var(--text-dark);white-space:nowrap;">${formatDate(rep.date)}</span>
                 </div>
-            ` : `
+            `).join('') : `
                 <div style="padding:16px;text-align:center;color:var(--text-dark);">
                     <p>No related intelligence reports available.</p>
                 </div>
@@ -417,6 +557,25 @@ function injectIntelStyles() {
     window.showMitre = function(id, name, desc) {
         document.getElementById('intelModalTitle').innerHTML = '<code>' + id + '</code> — ' + name;
         document.getElementById('intelModalBody').innerHTML = desc + '<br><br><strong>Detection:</strong> Monitor for unusual activity.<br><strong>Mitigation:</strong> Implement appropriate controls.';
+        document.getElementById('intelModal').classList.add('active');
+    };
+    
+    window.showMitreDetails = function(id, name, tactic, confidence, confLabel, explanation, mitigations) {
+        document.getElementById('intelModalTitle').innerHTML = '<code>' + safeString(id) + '</code> — ' + safeString(name);
+        let htmlBody = '<div style="margin-bottom:10px;"><strong>Tactic:</strong> <span style="color:var(--info);">' + safeString(tactic) + '</span> &nbsp;|&nbsp; <strong>Confidence:</strong> <span class="actor-confidence conf-' + (confLabel || 'low').toLowerCase() + '">' + (confLabel || 'LOW') + ' (' + (confidence || 0) + '%)</span></div>';
+        if (explanation) {
+            htmlBody += '<div style="margin-bottom:12px;background:rgba(59,130,246,0.06);padding:10px;border-radius:6px;border-left:3px solid var(--accent);"><strong>AI / Signal Correlation:</strong><br>' + safeString(explanation) + '</div>';
+        }
+        if (mitigations && Array.isArray(mitigations) && mitigations.length > 0) {
+            htmlBody += '<strong>Recommended Mitigations (STIX Course of Action):</strong><ul style="margin:8px 0 0 16px;padding:0;list-style:disc;">';
+            mitigations.forEach(function(m) {
+                htmlBody += '<li style="margin-bottom:6px;">' + safeString(m) + '</li>';
+            });
+            htmlBody += '</ul>';
+        } else {
+            htmlBody += '<strong>Mitigation:</strong> Enforce standard defensive hardening and continuous monitoring.';
+        }
+        document.getElementById('intelModalBody').innerHTML = htmlBody;
         document.getElementById('intelModal').classList.add('active');
     };
     

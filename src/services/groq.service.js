@@ -19,11 +19,18 @@ function buildPrompt(iocType, iocValue, assessment) {
     const attackList =
         (assessment.attackTechniques && assessment.attackTechniques.length > 0) ?
             assessment.attackTechniques
-                .map(t => `- ${t.techniqueId} (${t.technique}) - ${t.tactic}`)
+                .map(t => `- ${t.techniqueId} (${t.technique}) [Tactic: ${t.tactic}, Confidence: ${t.confidence}% - ${t.confidenceLabel}]\n  Explanation: ${t.explanation || 'N/A'}`)
                 .join('\n') :
             '- None identified';
 
-    return `You are a SOC L1 analyst assistant. Write a concise (2-4 sentence) analyst note for the following IOC investigation. Be factual, avoid hedging language like "it appears" repeatedly, and end with a single concrete next action.
+    let actorSummary = '- None attributed or identified';
+    if (assessment.actor) {
+        const a = assessment.actor;
+        actorSummary = `Threat Actor: ${a.primary_name} (Aliases: ${(a.aliases || []).slice(0, 4).join(', ')})\nOrigin Country: ${a.country || 'Unknown'}\nAttribution Confidence: ${a.confidenceLabel || 'MED'} (${a.confidence || 0}%)\nMotivations: ${(a.motivations || []).join(', ')}\nTargeted Sectors: ${(a.sectors || []).join(', ')}\nAssociated Campaigns: ${(a.campaigns || []).slice(0, 3).join(' | ')}`;
+    }
+
+    return `You are a Senior SOC Analyst mapping threat intelligence to MITRE ATT&CK and known Threat Actors. Write a concise (3-5 sentence) executive threat synthesis for the following IOC investigation.
+Highlight who is likely behind this attack (attribution and motivations), explain key provider findings and top MITRE ATT&CK techniques, and conclude with a specific defensive mitigation based on their known TTPs. Avoid repetitive hedging language like "it appears".
 
 IOC Type: ${iocType}
 IOC Value: ${iocValue}
@@ -33,13 +40,16 @@ Verdict: ${assessment.verdict}
 Confidence: ${assessment.confidence}%
 Sources responded: ${assessment.sourcesResponded}/${assessment.totalSources}
 
-Findings:
+Threat Actor Attribution Context:
+${actorSummary}
+
+Provider Findings:
 ${findingsList}
 
-MITRE ATT&CK techniques identified:
+MITRE ATT&CK Techniques Mapped:
 ${attackList}
 
-Write the analyst note now. Do not repeat the raw numbers verbatim, summarize them.`;
+Write the analyst note now. Synthesize the attribution, findings, and techniques clearly without just listing raw numbers.`;
 }
 
 /**
