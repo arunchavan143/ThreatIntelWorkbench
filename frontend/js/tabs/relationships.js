@@ -43,9 +43,18 @@ function renderRelationshipsTab(data) {
 
     // OTX Pulses & Related Indicators
     if (providers.otx && providers.otx.success && providers.otx.related_indicators) {
-        providers.otx.related_indicators.slice(0, 6).forEach((ind, idx) => {
-            nodes.push({ id: `otx_${idx}`, label: ind.indicator || ind, type: ind.type || 'Related IOC', category: 'indicator', icon: 'fa-link' });
-        });
+        const rel = providers.otx.related_indicators;
+        if (Array.isArray(rel)) {
+            rel.slice(0, 6).forEach((ind, idx) => {
+                nodes.push({ id: `otx_${idx}`, label: ind.indicator || ind, type: ind.type || 'Related IOC', category: 'indicator', icon: 'fa-link' });
+            });
+        } else if (rel && typeof rel === 'object' && rel.other) {
+            const adversary = Array.isArray(rel.other.adversary) ? rel.other.adversary : [];
+            const malware = Array.isArray(rel.other.malware_families) ? rel.other.malware_families : [];
+            [...adversary, ...malware].slice(0, 6).forEach((ind, idx) => {
+                nodes.push({ id: `otx_${idx}`, label: String(ind), type: 'Related IOC', category: 'indicator', icon: 'fa-link' });
+            });
+        }
     }
 
     // AbuseIPDB Reports

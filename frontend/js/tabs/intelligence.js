@@ -181,33 +181,76 @@ function renderIntelligenceTab(data) {
     `;
     
     // ============================================================
-    // SECTION 4: Related IOCs
+    // SECTION 4: Related IOCs (FIXED)
     // ============================================================
-    // Extract related IOCs from provider data
+    // Extract related IOCs from provider data safely
     const relatedIOCs = [];
+
     if (providers.otx?.success && providers.otx.related_indicators) {
         const rel = providers.otx.related_indicators;
-        if (rel.other && rel.other.adversary) {
-            rel.other.adversary.forEach(a => relatedIOCs.push({ type: 'domain', value: a, confidence: 'HIGH' }));
+        
+        // Check if rel is an array
+        if (Array.isArray(rel)) {
+            rel.forEach(item => {
+                if (typeof item === 'string') {
+                    relatedIOCs.push({ type: 'domain', value: item, confidence: 'HIGH' });
+                } else if (item && typeof item === 'object' && item.indicator) {
+                    relatedIOCs.push({ type: item.type || 'domain', value: item.indicator, confidence: 'HIGH' });
+                }
+            });
+        }
+        // Check if rel is an object and has 'other' property
+        else if (rel && typeof rel === 'object') {
+            // Check if rel.other exists and is an object
+            if (rel.other && typeof rel.other === 'object') {
+                // Handle adversary array
+                if (Array.isArray(rel.other.adversary)) {
+                    rel.other.adversary.forEach(a => {
+                        if (a && typeof a === 'string') {
+                            relatedIOCs.push({ type: 'domain', value: a, confidence: 'HIGH' });
+                        }
+                    });
+                }
+                // Handle malware_families array
+                if (Array.isArray(rel.other.malware_families)) {
+                    rel.other.malware_families.forEach(m => {
+                        if (m && typeof m === 'string') {
+                            relatedIOCs.push({ type: 'hash', value: m, confidence: 'MEDIUM' });
+                        }
+                    });
+                }
+            }
         }
     }
-    if (providers.virustotal?.success && providers.virustotal.categories) {
-        // Example: extract from categories if available
+
+    // Also check for related indicators from other providers
+    if (providers.virustotal?.success) {
+        // If VT has related domains or IPs
+        if (providers.virustotal.categories && typeof providers.virustotal.categories === 'object') {
+            // Add logic here if needed
+        }
     }
-    
+
+    // Now ensure relatedIOCs is ALWAYS an array
+    // This is the key fix - if it's not an array, make it one
+    const safeRelatedIOCs = Array.isArray(relatedIOCs) ? relatedIOCs : [];
+
+    // Use safeRelatedIOCs for display
+    const displayCount = safeRelatedIOCs.length;
+
     html += `
         <div class="intel-card full">
-            <div class="card-title"><i class="fa-solid fa-link"></i> Related IOCs <span style="color:var(--text-dark);margin-left:4px;">(${relatedIOCs.length || 0} found)</span></div>
-            ${relatedIOCs.length > 0 ? `
+            <div class="card-title"><i class="fa-solid fa-link"></i> Related IOCs <span style="color:var(--text-dark);margin-left:4px;">(${displayCount} found)</span></div>
+            ${displayCount > 0 ? `
             <table class="iocs-table">
                 <thead><tr><th>Type</th><th>Indicator</th><th>First Seen</th><th>Confidence</th></tr></thead>
                 <tbody>
-                    ${relatedIOCs.map((ioc, idx) => `
+                    ${safeRelatedIOCs.map((ioc) => `
                         <tr>
-                            <td><span class="tag tag-domain">DOM</span></td>
-                            <td class="mono">${ioc.value}</td>
+                            <td><span class="tag tag-${ioc.type || 'domain'}">${(ioc.type || 'domain').toUpperCase()}</span></td>
+                            <td class="mono">${safeString(ioc.value)}</td>
                             <td class="mono">${formatDate(new Date().toISOString())}</td>
-                            <td><span class="actor-confidence conf-${ioc.confidence.toLowerCase()}">${ioc.confidence}</span></td>
+                            <td><span class="actor-confidence conf-${(ioc.confidence || 'LOW').toLowerCase()}">${ioc.confidence || 'LOW'}</span></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -219,30 +262,26 @@ function renderIntelligenceTab(data) {
             `}
         </div>
     `;
-    
+
     // ============================================================
-    // SECTION 5: TTPs (from data if available)
+    // SECTION 5: TTPs (FIXED)
     // ============================================================
-    const ttps = [
-        { num: 1, text: '<strong>Initial Access:</strong> Spear-phishing via compromised legitimate domains with weaponized Office documents.' },
-        { num: 2, text: '<strong>Execution:</strong> PowerShell-based payloads leveraging LOLBAS techniques.' },
-        { num: 3, text: '<strong>Persistence:</strong> Registry run keys and scheduled tasks for long-term access.' },
-        { num: 4, text: '<strong>Defense Evasion:</strong> Process injection into legitimate system processes.' },
-        { num: 5, text: '<strong>Exfiltration:</strong> HTTPS tunneling to C2 infrastructure.' }
-    ];
-    
-    // Check if we have any tags that indicate TTPs
-    const hasTTPs = providers.otx?.success && providers.otx.tags && providers.otx.tags.length > 0;
-    
+    const hasTTPs = providers.otx?.success && 
+                    providers.otx.tags && 
+                    Array.isArray(providers.otx.tags) && 
+                    providers.otx.tags.length > 0;
+
     html += `
         <div class="intel-card ${hasTTPs ? '' : 'full'}">
             <div class="card-title"><i class="fa-solid fa-list-ol"></i> Observed TTPs</div>
-            ${hasTTPs ? ttps.map(ttp => `
-                <div class="ttp-item">
-                    <div class="ttp-num">${ttp.num}</div>
-                    <div class="ttp-text">${ttp.text}</div>
-                </div>
-            `).join('') : `
+            ${hasTTPs ? `
+                ${providers.otx.tags.map((tag, index) => `
+                    <div class="ttp-item">
+                        <div class="ttp-num">${index + 1}</div>
+                        <div class="ttp-text"><strong>Technique:</strong> ${safeString(tag)}</div>
+                    </div>
+                `).join('')}
+            ` : `
                 <div style="padding:16px;text-align:center;color:var(--text-dark);">
                     <p>No TTPs observed from available intelligence.</p>
                 </div>
