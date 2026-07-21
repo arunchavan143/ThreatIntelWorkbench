@@ -5,33 +5,22 @@
 let currentIOC = null;
 let currentType = 'ip';
 
-// ============================================================
-// DOM READY
-// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     // Load feed status
     getHealth().then(health => {
+        window.lastHealthData = health;
         renderFeedStatus(health);
-        // Update footer
         if (health && health.uptime) {
             document.getElementById('uptime').textContent = (health.uptime / 60).toFixed(1) + 'm';
         }
     }).catch(() => {
-        // Offline fallback
         document.querySelectorAll('.feed-pill').forEach(p => {
             p.querySelector('.dot').classList.add('offline');
         });
     });
     
-    // Load recent investigations
     renderRecentChips();
-    
-    // Set initial input
     updatePlaceholder('ip');
-    
-    // ============================================================
-    // EVENT LISTENERS
-    // ============================================================
     
     // Input tabs
     document.querySelectorAll('.input-tab').forEach(tab => {
@@ -41,12 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const type = this.dataset.type;
             currentType = type;
             updatePlaceholder(type);
-            // If batch, show hint
-            if (type === 'batch') {
-                document.querySelector('.search-hint').textContent = 'Enter multiple IOCs separated by commas';
-            } else {
-                document.querySelector('.search-hint').textContent = 'Press Ctrl+Enter to investigate';
-            }
+            document.querySelector('.search-hint').textContent = 
+                type === 'batch' ? 'Enter multiple IOCs separated by commas' : 'Press Ctrl+Enter to investigate';
         });
     });
     
@@ -65,16 +50,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('backBtn').addEventListener('click', () => {
         document.getElementById('page-search').classList.remove('hidden');
         document.getElementById('page-results').classList.remove('active');
-        document.querySelector('.topbar-left .logo').textContent = '🛡️ Threat Intel Workbench';
+        document.getElementById('logoText').textContent = '🛡️ Threat Intel Workbench';
     });
     
     // Copy button
-    document.getElementById('copyBtn').addEventListener('click', () => {
-        if (currentIOC) copyIOC(currentIOC);
+    document.getElementById('copyBtn').addEventListener('click', function() {
+        const ioc = this.dataset.ioc || currentIOC;
+        if (ioc) copyIOC(ioc);
     });
     
     // Export PDF
-    document.getElementById('exportPDFBtn').addEventListener('click', exportPDF);
+    document.getElementById('exportPDFBtn').addEventListener('click', function() {
+        if (typeof exportPDF === 'function') exportPDF();
+    });
     
     // Clear recent
     document.getElementById('clearRecent').addEventListener('click', clearRecentInvestigations);
@@ -84,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
         item.addEventListener('click', function() {
             document.querySelectorAll('.results-sidebar .nav-item').forEach(i => i.classList.remove('active'));
             this.classList.add('active');
-            
             const tab = this.dataset.tab;
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             const panel = document.getElementById(tab + 'Tab');
@@ -93,9 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ============================================================
-// UPDATE PLACEHOLDER
-// ============================================================
 function updatePlaceholder(type) {
     const input = document.getElementById('searchInput');
     const placeholders = {
@@ -108,9 +92,6 @@ function updatePlaceholder(type) {
     input.placeholder = placeholders[type] || placeholders['ip'];
 }
 
-// ============================================================
-// PERFORM SEARCH
-// ============================================================
 function performSearch() {
     const input = document.getElementById('searchInput');
     const value = input.value.trim();
@@ -118,45 +99,88 @@ function performSearch() {
         alert('Please enter an IOC to investigate.');
         return;
     }
-    
     currentIOC = value;
     
-    // Detect type automatically if not batch
     if (currentType === 'batch') {
-        // Batch mode
         const items = value.split(',').map(s => s.trim()).filter(s => s);
-        if (items.length === 0) {
-            alert('Please enter at least one IOC.');
-            return;
-        }
-        if (items.length > 10) {
-            alert('Maximum 10 IOCs per batch.');
-            return;
-        }
-        // Batch investigation (will be handled separately)
+        if (items.length === 0) { alert('Please enter at least one IOC.'); return; }
+        if (items.length > 10) { alert('Maximum 10 IOCs per batch.'); return; }
         performBatchInvestigation(items);
         return;
     }
     
-    // Auto-detect type if input doesn't match selected type
     const detected = detectType(value);
     let type = currentType;
     if (detected !== 'unknown' && detected !== type) {
-        // User may have selected wrong tab, use detected type
         type = detected;
-        // Update tab UI
         document.querySelectorAll('.input-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.type === type);
         });
     }
-    
-    // Load investigation
     loadInvestigation(value, type);
 }
 
 // ============================================================
-// BATCH INVESTIGATION
+// LOAD INVESTIGATION - MAIN FUNCTION
 // ============================================================
+async function loadInvestigation(value, type) {
+    if (!value) return;
+    const btn = document.getElementById('investigateBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Investigating...';
+    btn.disabled = true;
+    
+    try {
+        let result;
+        switch (type) {
+            case 'ip': result = await investigateIP(value); break;
+            case 'domain': result = await investigateDomain(value); break;
+            case 'hash': result = await investigateHash(value); break;
+            case 'url': result = await investigateURL(value); break;
+            default: throw new Error('Unsupported type');
+        }
+        
+        if (result.success) {
+            addRecentInvestigation(value, type);
+            document.getElementById('page-search').classList.add('hidden');
+            document.getElementById('page-results').classList.add('active');
+            
+            // ============================================================
+            // RENDER ALL TABS
+            // ============================================================
+            // 1. Overview Tab
+            if (typeof renderOverview === 'function') renderOverview(result.data);
+            
+            // 2. Intelligence Tab
+            if (typeof renderIntelligenceTab === 'function') renderIntelligenceTab(result.data);
+            
+            // 3. Evidence Tab
+            if (typeof renderEvidenceTab === 'function') renderEvidenceTab(result.data);
+            
+            // 4. Relationships Tab
+            if (typeof renderRelationshipsTab === 'function') renderRelationshipsTab(result.data);
+
+            // 5. Timeline Tab
+            if (typeof renderTimelineTab === 'function') renderTimelineTab(result.data);
+
+            // 6. Settings Tab
+            if (typeof renderSettingsTab === 'function') renderSettingsTab(result.data, window.lastHealthData);
+            
+            // Update footer and header
+            if (typeof updateFooterStats === 'function') updateFooterStats(result.data);
+            document.getElementById('logoText').textContent = `🛡️ Investigating: ${value}`;
+            const copyBtn = document.getElementById('copyBtn');
+            if (copyBtn) copyBtn.dataset.ioc = value;
+        } else {
+            alert('Error: ' + (result.error || 'Investigation failed'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
 async function performBatchInvestigation(items) {
     const btn = document.getElementById('investigateBtn');
     const originalText = btn.innerHTML;
@@ -166,11 +190,8 @@ async function performBatchInvestigation(items) {
     try {
         const result = await investigateBatch(items);
         if (result.success) {
-            // Show results page
             document.getElementById('page-search').classList.add('hidden');
             document.getElementById('page-results').classList.add('active');
-            
-            // Render batch results
             renderBatchResults(result);
         } else {
             alert('Batch Error: ' + (result.error || 'Failed'));
@@ -178,18 +199,13 @@ async function performBatchInvestigation(items) {
     } catch (error) {
         alert('Error: ' + error.message);
     }
-    
     btn.innerHTML = originalText;
     btn.disabled = false;
 }
 
-// ============================================================
-// RENDER BATCH RESULTS
-// ============================================================
 function renderBatchResults(result) {
     const container = document.getElementById('overviewTab');
     const summary = result.summary || {};
-    
     let html = `
     <div style="margin-bottom:16px;">
         <h2 style="font-weight:600;font-size:18px;margin-bottom:4px;">📦 Batch Investigation</h2>
@@ -222,13 +238,10 @@ function renderBatchResults(result) {
         `).join('')}
     </div>
     `;
-    
     container.innerHTML = html;
 }
 
-// ============================================================
-// EXPOSE GLOBALLY
-// ============================================================
+// Expose functions globally (for onclick attributes)
 window.loadInvestigation = loadInvestigation;
 window.exportPDF = exportPDF;
 window.copyIOC = copyIOC;

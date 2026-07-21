@@ -8,10 +8,7 @@
     <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-
-    <!-- ============================================================
-    PAGE 1: SEARCH
-    ============================================================ -->
+    <!-- === SEARCH PAGE === -->
     <div id="page-search" class="page-search">
         <div class="search-bg"></div>
         <div class="search-container">
@@ -20,11 +17,7 @@
                 <h1>Threat Intel Workbench</h1>
                 <p>Multi-source IOC investigation platform</p>
             </div>
-
-            <div class="feed-status" id="feedStatus">
-                <!-- Populated by JS -->
-            </div>
-
+            <div class="feed-status" id="feedStatus"></div>
             <div class="input-tabs">
                 <button class="input-tab active" data-type="ip"><i class="fa-solid fa-globe"></i> IP</button>
                 <button class="input-tab" data-type="domain"><i class="fa-solid fa-link"></i> Domain</button>
@@ -32,28 +25,22 @@
                 <button class="input-tab" data-type="url"><i class="fa-solid fa-link"></i> URL</button>
                 <button class="input-tab" data-type="batch"><i class="fa-solid fa-layer-group"></i> Batch</button>
             </div>
-
             <div class="search-box">
                 <input type="text" class="search-input" id="searchInput" placeholder="Enter IP address..." value="8.8.8.8" />
                 <button class="search-btn" id="investigateBtn"><i class="fa-solid fa-magnifying-glass"></i> Investigate</button>
             </div>
             <div class="search-hint">Press Ctrl+Enter to investigate</div>
-
             <div class="recent-section">
                 <div class="recent-header">
                     <h3>Recent Investigations</h3>
                     <button class="clear-btn" id="clearRecent">Clear all</button>
                 </div>
-                <div class="recent-chips" id="recentChips">
-                    <!-- Loaded from localStorage -->
-                </div>
+                <div class="recent-chips" id="recentChips"></div>
             </div>
         </div>
     </div>
 
-    <!-- ============================================================
-    PAGE 2: RESULTS
-    ============================================================ -->
+    <!-- === RESULTS PAGE === -->
     <div id="page-results" class="page-results">
         <header class="topbar">
             <div class="topbar-left">
@@ -66,7 +53,6 @@
                 <button class="btn-export" id="exportPDFBtn">📄 PDF</button>
             </div>
         </header>
-
         <div class="results-layout">
             <aside class="results-sidebar">
                 <div class="nav-label">Navigation</div>
@@ -79,7 +65,6 @@
                 <div class="nav-label">System</div>
                 <button class="nav-item" data-tab="settings"><i class="fa-solid fa-gear"></i> <span>Settings</span></button>
             </aside>
-
             <main class="results-main" id="resultsMain">
                 <div id="tab-content">
                     <div id="overviewTab" class="tab-panel active">
@@ -96,7 +81,6 @@
                 </div>
             </main>
         </div>
-
         <footer class="footer-bar">
             <span><span class="dot"></span> All Systems Operational</span>
             <div class="items">
@@ -108,12 +92,16 @@
     </div>
 
     <!-- ============================================================
-    SCRIPTS - LOAD IN CORRECT ORDER
+    SCRIPTS – CORRECT ORDER (utils → api → ui → app)
     ============================================================ -->
+    <!-- Scripts – correct order -->
     <script src="/js/utils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/ui.js"></script>
+    <script src="/js/tabs/intelligence.js"></script>
+    <script src="/js/tabs/evidence.js"></script>
+    <script src="/js/tabs/relationships.js"></script>
+    <script src="/js/tabs/export.js"></script>         <!-- NEW -->
     <script src="/js/app.js"></script>
-
 </body>
 </html>

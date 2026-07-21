@@ -2,13 +2,15 @@
 const dns = require('dns').promises;
 
 class SubdomainService {
-    // Common subdomain wordlist (can be expanded)
-    commonSubdomains = [
-        'www', 'mail', 'ftp', 'admin', 'api', 'test', 'dev', 'staging', 
-        'secure', 'beta', 'vpn', 'webmail', 'cpanel', 'whm', 'ns1', 'ns2',
-        'blog', 'shop', 'store', 'support', 'help', 'docs', 'static', 'media',
-        'cdn', 'images', 'video', 'music', 'download', 'upload', 'backup'
-    ];
+    constructor() {
+        // Common subdomain wordlist (can be expanded)
+        this.commonSubdomains = [
+            'www', 'mail', 'ftp', 'admin', 'api', 'test', 'dev', 'staging', 
+            'secure', 'beta', 'vpn', 'webmail', 'cpanel', 'whm', 'ns1', 'ns2',
+            'blog', 'shop', 'store', 'support', 'help', 'docs', 'static', 'media',
+            'cdn', 'images', 'video', 'music', 'download', 'upload', 'backup'
+        ];
+    }
 
     async discover(domain) {
         try {

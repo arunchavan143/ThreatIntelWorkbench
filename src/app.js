@@ -24,8 +24,16 @@ const GeolocationService = require('./services/geolocation.service');
 const CTService = require('./services/certificate-transparency.service');
 
 // ============================================================
-// MIDDLEWARE
+// MIDDLEWARE IMPORTS & SETUP
 // ============================================================
+const { requestLogger } = require('./middleware/logger');
+const limiter = require('./middleware/rate-limit');
+const { errorHandler, notFound } = require('./middleware/error-handler');
+const { validateExternalAPI } = require('./middleware/auth');
+const exportRoutes = require('./routes/export.routes');
+
+app.use(requestLogger);
+app.use(validateExternalAPI);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,12 +44,16 @@ app.use((req, res, next) => {
     next();
 });
 
+// Apply rate limiter to API endpoints
+app.use('/api/', limiter);
+
+// Mount modular export routes
+app.use('/api/export', exportRoutes);
+
 // ============================================================
 // SERVE STATIC FRONTEND FILES
 // ============================================================
 // Serve frontend folder
-app.use(express.static(path.join(__dirname, '../frontend')));
-// Also serve from root (for /css, /js paths)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ============================================================
@@ -433,13 +445,13 @@ app.post('/api/investigate/batch', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Max 10 indicators per batch' });
         }
 
-        function detectType(value) {
+        const detectType = (value) => {
             if (/^(\d{1,3}\.){3}\d{1,3}$/.test(value)) return 'ip';
             if (/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(value)) return 'domain';
             if (/^[a-fA-F0-9]{32}$/.test(value) || /^[a-fA-F0-9]{40}$/.test(value) || /^[a-fA-F0-9]{64}$/.test(value)) return 'hash';
             if (/^https?:\/\//i.test(value)) return 'url';
             return 'unknown';
-        }
+        };
 
         const results = await Promise.all(indicators.map(async (item) => {
             const type = detectType(item);
@@ -540,16 +552,17 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api/') || req.path === '/health') {
         return res.status(404).json({ error: 'Not found' });
     }
+    // Return 404 for missing static assets instead of serving index.html
+    if (req.path.startsWith('/js/') || req.path.startsWith('/css/') || req.path.startsWith('/assets/') || /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot)$/i.test(req.path)) {
+        return res.status(404).send('Static asset not found');
+    }
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // ============================================================
 // ERROR HANDLING
 // ============================================================
-app.use((err, req, res, next) => {
-    console.error('Server Error:', err);
-    res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
-});
+app.use(errorHandler);
 
 // ============================================================
 // START SERVER

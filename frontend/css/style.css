@@ -593,3 +593,59 @@ body {
     .feed-status { gap: 4px; }
     .feed-pill { font-size: 8px; padding: 2px 8px; }
 }
+
+/* ============================================================
+   ADDITIONAL UI IMPROVEMENTS
+   ============================================================ */
+
+/* Card spacing */
+.card { margin-bottom: 12px; }
+
+/* Provider bar fill animation */
+.provider-bar .bar-fill { 
+    transition: width 0.8s ease;
+    min-width: 4px;
+}
+
+/* Source row hover */
+.source-row:hover { 
+    background: var(--bg-elevated); 
+    border-radius: 4px; 
+    padding: 4px 8px;
+    margin: 0 -8px;
+}
+
+/* Infrastructure values */
+.infra-row .value { 
+    font-family: var(--font-mono); 
+    font-size: 12px;
+    max-width: 60%;
+    text-align: right;
+    word-break: break-all;
+}
+
+/* Threat vector bar colors */
+.vector-row .bar-fill.danger { background: var(--danger); }
+.vector-row .bar-fill.warning { background: var(--warning); }
+.vector-row .bar-fill.clean { background: var(--success); }
+
+/* Sidebar active state enhancement */
+.results-sidebar .nav-item.active {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding-left: 11px;
+}
+
+/* Better score ring */
+.ring-container {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 6px;
+    position: relative;
+}
+.ring-value {
+    font-size: 22px;
+    font-weight: 800;
+}
