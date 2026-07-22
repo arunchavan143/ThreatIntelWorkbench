@@ -267,3 +267,7 @@ threat-intel-workbench-backend/
 
 Designed and engineered for professional SOC analysts and defensive cybersecurity engineers.
 **Arun Chavan** (`@arunchavan143`)
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
