@@ -102,8 +102,34 @@ function renderOverview(data) {
                 <div class="title"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Analyst Executive Summary</div>
                 <span class="verdict-badge ${verdictClass}">${verdictInfo.emoji} ${risk.verdict || 'UNKNOWN'}</span>
             </div>
-            <div class="ai-text">${aiSummary.text || 'No AI summary available.'}</div>
-            <div class="ai-meta">
+            <div class="ai-text">${typeof parseMarkdown === 'function' ? parseMarkdown(aiSummary.summary || aiSummary.text || 'No AI summary available.') : safeString(aiSummary.summary || aiSummary.text || 'No AI summary available.')}</div>
+            
+            ${aiSummary.false_positive_triage ? `
+            <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25);">
+                <div style="font-weight: 600; font-size: 13px; color: #60a5fa; margin-bottom: 4px;"><i class="fa-solid fa-scale-balanced"></i> AI False Positive Triage: <span style="color: #fff;">${safeString(aiSummary.false_positive_triage.verdict || 'UNKNOWN')}</span></div>
+                <div style="font-size: 12px; color: var(--text-light); line-height: 1.5;">${typeof parseMarkdown === 'function' ? parseMarkdown(aiSummary.false_positive_triage.explanation || '') : safeString(aiSummary.false_positive_triage.explanation || '')}</div>
+            </div>
+            ` : ''}
+
+            ${Array.isArray(aiSummary.action_recommendations) && aiSummary.action_recommendations.length > 0 ? `
+            <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);">
+                <div style="font-weight: 600; font-size: 13px; color: #f87171; margin-bottom: 6px;"><i class="fa-solid fa-shield-halved"></i> Immediate Action Recommendations</div>
+                <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: var(--text-light); line-height: 1.6;">
+                    ${aiSummary.action_recommendations.map(r => `<li><strong style="color: #fff;">${typeof parseMarkdown === 'function' ? parseMarkdown(r) : safeString(r)}</strong></li>`).join('')}
+                </ul>
+            </div>
+            ` : ''}
+
+            ${Array.isArray(aiSummary.next_steps) && aiSummary.next_steps.length > 0 ? `
+            <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);">
+                <div style="font-weight: 600; font-size: 13px; color: #34d399; margin-bottom: 6px;"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Investigative Next Steps</div>
+                <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: var(--text-light); line-height: 1.6;">
+                    ${aiSummary.next_steps.map(s => `<li>${typeof parseMarkdown === 'function' ? parseMarkdown(s) : safeString(s)}</li>`).join('')}
+                </ul>
+            </div>
+            ` : ''}
+
+            <div class="ai-meta" style="margin-top:14px;">
                 <div class="ai-meta-item">Confidence: <strong>${risk.confidence || 0}%</strong></div>
                 <div class="ai-meta-item">Sources: <strong>${risk.sources || 0}/${risk.total_sources || 0}</strong></div>
                 <div class="ai-meta-item">Risk Score: <strong>${risk.score || 0}/100</strong></div>
@@ -381,13 +407,36 @@ function renderTimelineTab(data) {
         icon: 'fa-flag-checkered'
     });
 
+    const aiTimeline = data.ai_summary?.timeline || [];
+
     let html = `
     <div style="max-width:900px;margin:0 auto;padding:24px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--border);">
             <i class="fa-solid fa-clock-rotate-left" style="color:var(--info);font-size:20px;"></i>
-            <h2 style="font-size:18px;font-weight:700;margin:0;">Investigation Audit Timeline</h2>
+            <h2 style="font-size:18px;font-weight:700;margin:0;">Investigation & AI Timeline Reconstruction</h2>
             <span style="margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--text-dim);background:var(--bg-elevated);padding:4px 10px;border-radius:6px;border:1px solid var(--border);">Total Duration: ${data.processing_time || 'N/A'}</span>
         </div>
+
+        ${aiTimeline.length ? `
+        <div class="card" style="padding:24px;margin-bottom:24px;border:1px solid rgba(139,92,246,0.35);background:linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(15,23,42,0.95) 100%);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color:#c084fc;font-size:18px;"></i>
+                <h3 style="margin:0;font-size:16px;color:#fff;">AI Historical Timeline Reconstruction (Priority 8)</h3>
+                <span style="margin-left:auto;background:rgba(192,132,252,0.15);color:#c084fc;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;">Groq Synthesis</span>
+            </div>
+            <div style="position:relative;padding-left:24px;border-left:2px solid #a855f7;margin-left:10px;">
+                ${aiTimeline.map((t, idx) => `
+                <div style="position:relative;margin-bottom:${idx === aiTimeline.length - 1 ? '0' : '22px'};">
+                    <div style="position:absolute;left:-33px;top:2px;width:16px;height:16px;border-radius:50%;background:#c084fc;border:3px solid var(--bg-card);"></div>
+                    <div style="font-weight:700;font-size:13px;color:#c084fc;margin-bottom:3px;">${safeString(t.time || 'Timeline Event')}</div>
+                    <div style="font-size:13px;color:var(--text-light);line-height:1.5;">${safeString(t.event || t)}</div>
+                </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        <h3 style="font-size:15px;color:var(--text-light);margin-bottom:14px;"><i class="fa-solid fa-server" style="color:var(--accent);margin-right:8px;"></i> System Audit Execution Trail</h3>
         <div class="card" style="padding:24px;">
             <div style="position:relative;padding-left:24px;border-left:2px solid var(--border);margin-left:10px;">
                 ${events.map((ev, i) => `

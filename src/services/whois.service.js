@@ -1,15 +1,32 @@
 // src/services/whois.service.js
-const whois = require('whois');
 
 class WhoisService {
     async lookup(domain) {
         try {
-            const result = await new Promise((resolve, reject) => {
-                whois.lookup(domain, (err, data) => {
+            // Lazy load / dynamic import to support ESM compatibility across CommonJS and Jest environments
+            let whoisModule;
+            try {
+                whoisModule = require('whois');
+            } catch (err) {
+                if (err.code === 'ERR_REQUIRE_ESM' || err instanceof SyntaxError) {
+                    const esm = await import('whois');
+                    whoisModule = esm.default || esm;
+                } else {
+                    throw err;
+                }
+            }
+            const whois = whoisModule;
+
+            const lookupPromise = new Promise((resolve, reject) => {
+                whois.lookup(domain, { timeout: 6000 }, (err, data) => {
                     if (err) reject(err);
                     else resolve(data);
                 });
             });
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('WHOIS lookup timed out after 6000ms')), 6000);
+            });
+            const result = await Promise.race([lookupPromise, timeoutPromise]);
 
             // Parse whois data (simplified)
             const parsed = this.parseWhois(result);
@@ -29,6 +46,7 @@ class WhoisService {
     }
 
     parseWhois(raw) {
+        if (!raw || typeof raw !== 'string') return {};
         const lines = raw.split('\n');
         const data = {};
         for (const line of lines) {

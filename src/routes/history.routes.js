@@ -3,9 +3,9 @@ const router = express.Router();
 const LoggerService = require('../services/logger.service');
 
 // Get investigation history
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
-    const history = LoggerService.getInvestigationHistory(limit);
+    const history = await LoggerService.getInvestigationHistoryAsync(limit);
 
     res.json({
         success: true,
@@ -16,9 +16,9 @@ router.get('/', (req, res) => {
 });
 
 // Get specific investigation
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     const id = req.params.id;
-    const history = LoggerService.getInvestigationHistory(1000);
+    const history = await LoggerService.getInvestigationHistoryAsync(1000);
     const investigation = history.find(h => h.investigation_id === id || h.ioc === id);
 
     if (!investigation) {
@@ -32,6 +32,19 @@ router.get('/:id', (req, res) => {
         success: true,
         data: investigation
     });
+});
+
+const GroqService = require('../services/groq.service');
+
+// AI Natural Language Search over history
+router.post('/ai-search', async (req, res) => {
+    const { query } = req.body;
+    if (!query || typeof query !== 'string') {
+        return res.status(400).json({ success: false, error: 'Query string required for AI search' });
+    }
+    const history = await LoggerService.getInvestigationHistoryAsync(100);
+    const result = await GroqService.searchNaturalLanguage(query, history);
+    res.json(result);
 });
 
 module.exports = router;

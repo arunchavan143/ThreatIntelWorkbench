@@ -4,7 +4,6 @@
 
 const express = require('express');
 const router = express.Router();
-const CacheService = require('../services/cache.service');
 
 router.post('/json', async (req, res, next) => {
     try {
@@ -36,6 +35,21 @@ router.post('/csv', async (req, res, next) => {
         res.setHeader('Content-Disposition', `attachment; filename="threat-intel-${ioc.value || 'report'}-${Date.now()}.csv"`);
         res.setHeader('Content-Type', 'text/csv');
         return res.status(200).send(csvContent);
+    } catch (error) {
+        next(error);
+    }
+});
+
+const GroqService = require('../services/groq.service');
+
+router.post('/ai-brief', async (req, res, next) => {
+    try {
+        const { data, format = 'executive' } = req.body;
+        if (!data || !data.ioc) {
+            return res.status(400).json({ success: false, error: 'Invalid investigation payload for AI report' });
+        }
+        const reportResult = await GroqService.generateExportReport(data, format);
+        return res.json(reportResult);
     } catch (error) {
         next(error);
     }

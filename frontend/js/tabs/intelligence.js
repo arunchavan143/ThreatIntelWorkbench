@@ -36,7 +36,54 @@ function renderIntelligenceTab(data) {
     `;
     
     // ============================================================
-    // SECTION 0: THREAT ACTOR PROFILE (from actor.service.js)
+    // SECTION 0: AI TACTICAL ASSESSMENT & RECOMMENDATIONS (Quick Wins)
+    // ============================================================
+    const aiSummary = data.ai_summary || null;
+    if (aiSummary && (aiSummary.false_positive_triage || aiSummary.action_recommendations || aiSummary.next_steps)) {
+        html += `
+        <div class="intel-card full" style="border:1px solid rgba(139,52,246,0.35);background:linear-gradient(135deg, rgba(139,52,246,0.08) 0%, rgba(15,23,42,0.95) 100%);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:#c084fc;font-size:18px;"></i>
+                    <h3 style="margin:0;font-size:16px;color:#fff;">AI Tactical Defense Briefing</h3>
+                </div>
+                <span style="background:rgba(192,132,252,0.15);color:#c084fc;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;">Groq Llama 3.3 70B</span>
+            </div>
+            
+            ${aiSummary.summary ? `<div style="font-size:13px;color:var(--text-light);margin-bottom:14px;line-height:1.6;">${safeString(aiSummary.summary)}</div>` : ''}
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+                ${aiSummary.false_positive_triage ? `
+                <div style="padding:12px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);">
+                    <div style="font-weight:600;font-size:13px;color:#60a5fa;margin-bottom:6px;"><i class="fa-solid fa-scale-balanced"></i> False Positive Triage: <span style="color:#fff;">${safeString(aiSummary.false_positive_triage.verdict || 'UNKNOWN')}</span></div>
+                    <div style="font-size:12px;color:var(--text-light);line-height:1.5;">${safeString(aiSummary.false_positive_triage.explanation || '')}</div>
+                </div>
+                ` : ''}
+
+                ${Array.isArray(aiSummary.action_recommendations) && aiSummary.action_recommendations.length > 0 ? `
+                <div style="padding:12px;border-radius:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);">
+                    <div style="font-weight:600;font-size:13px;color:#f87171;margin-bottom:6px;"><i class="fa-solid fa-shield-halved"></i> Immediate Action Recommendations</div>
+                    <ul style="margin:0;padding-left:18px;font-size:12px;color:var(--text-light);line-height:1.6;">
+                        ${aiSummary.action_recommendations.map(r => `<li><strong style="color:#fff;">${safeString(r)}</strong></li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+
+                ${Array.isArray(aiSummary.next_steps) && aiSummary.next_steps.length > 0 ? `
+                <div style="padding:12px;border-radius:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);">
+                    <div style="font-weight:600;font-size:13px;color:#34d399;margin-bottom:6px;"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Investigative Next Steps</div>
+                    <ul style="margin:0;padding-left:18px;font-size:12px;color:var(--text-light);line-height:1.6;">
+                        ${aiSummary.next_steps.map(s => `<li>${safeString(s)}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        `;
+    }
+
+    // ============================================================
+    // SECTION 1: THREAT ACTOR PROFILE (from actor.service.js)
     // ============================================================
     const actorProfile = enrichment.actor || null;
     if (actorProfile) {

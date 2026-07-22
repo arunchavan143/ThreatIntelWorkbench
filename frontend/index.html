@@ -30,6 +30,18 @@
                 <button class="search-btn" id="investigateBtn"><i class="fa-solid fa-magnifying-glass"></i> Investigate</button>
             </div>
             <div class="search-hint">Press Ctrl+Enter to investigate</div>
+            
+            <div class="ai-history-search" style="margin:20px 0;padding:16px;background:rgba(15,23,42,0.75);border:1px solid rgba(139,92,246,0.35);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.3);text-align:left;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;color:#c084fc;font-weight:600;font-size:13px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Natural Language History Search (Priority 10)
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="aiHistorySearchInput" placeholder="e.g. Show me all critical IPs from last week or investigations with high risk scores..." style="flex:1;background:rgba(30,41,59,0.8);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#fff;font-size:13px;" />
+                    <button id="aiHistorySearchBtn" style="padding:10px 18px;border-radius:8px;background:linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);border:none;color:#fff;font-weight:600;font-size:13px;cursor:pointer;"><i class="fa-solid fa-sparkles"></i> Search</button>
+                </div>
+                <div id="aiHistorySearchResults" style="margin-top:12px;font-size:13px;color:var(--text-light);display:none;padding:12px;background:rgba(30,41,59,0.5);border-radius:8px;border-left:3px solid #a855f7;"></div>
+            </div>
+
             <div class="recent-section">
                 <div class="recent-header">
                     <h3>Recent Investigations</h3>
@@ -50,6 +62,7 @@
             <div class="topbar-right">
                 <span><span class="status-dot"></span> Online</span>
                 <button class="icon-btn" id="copyBtn" title="Copy IOC"><i class="fa-regular fa-copy"></i></button>
+                <button class="btn-export" id="aiExportBtn" onclick="openAIReportModal('executive')" style="background:linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);color:#fff;border:none;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Report & Alert</button>
                 <button class="btn-export" id="exportPDFBtn">📄 PDF</button>
             </div>
         </header>
@@ -102,6 +115,7 @@
     <script src="/js/tabs/evidence.js"></script>
     <script src="/js/tabs/relationships.js"></script>
     <script src="/js/tabs/export.js"></script>         <!-- NEW -->
+    <script src="/js/chat-widget.js"></script>       <!-- Priority 4 AI Chat -->
     <script src="/js/app.js"></script>
 </body>
 </html>

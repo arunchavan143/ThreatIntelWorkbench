@@ -1,5 +1,6 @@
 // src/services/urlscan.service.js
 const axios = require('axios');
+const { isKeyConfigured } = require('../middleware/auth');
 
 class URLScanService {
     constructor() {
@@ -10,7 +11,7 @@ class URLScanService {
     async scan(url) {
         try {
             // Validate API key
-            if (!this.apiKey || this.apiKey === 'your_urlscan_api_key_here') {
+            if (!isKeyConfigured('URLSCAN_API_KEY')) {
                 console.warn('⚠️ URLScan API key not configured');
                 return {
                     success: false,
@@ -45,15 +46,15 @@ class URLScanService {
                 };
             }
 
-            // Poll for results
+            // Poll for results (max ~7 seconds)
             let result = null;
             let attempts = 0;
-            while (attempts < 15) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
+            while (attempts < 5) {
+                await new Promise(resolve => setTimeout(resolve, 1200));
                 try {
                     const resultResponse = await axios.get(`${this.baseUrl}/result/${uuid}`, {
                         headers: { 'API-Key': this.apiKey },
-                        timeout: 5000
+                        timeout: 4000
                     });
                     if (resultResponse.data && resultResponse.data.task) {
                         result = resultResponse.data;

@@ -1,6 +1,6 @@
-# System Architecture - Threat Intel Workbench Pro V3
+# System Architecture - Threat Intel Workbench Pro V4
 
-This document details the software architecture, data flow pipelines, correlation engines, and security model of **Threat Intel Workbench Pro V3**.
+This document details the software architecture, data flow pipelines, correlation engines, and security model of **Threat Intel Workbench Pro V4**.
 
 ---
 
@@ -64,15 +64,15 @@ graph TB
 The frontend is built using **pure HTML5, CSS3, and modern modular JavaScript (ES6+)** to maintain zero build-step overhead, instant page loads, and direct DOM performance.
 
 - **Design System**: A custom Dark Glassmorphism CSS architecture (`style.css`) utilizing HSL color variables, backdrop blur filters, responsive CSS Grid layouts, and CSS transitions.
-- **State Management**: Application state (`window.currentData`) is managed cleanly inside global application context, enabling real-time switching between investigation tabs without re-querying the backend.
-- **Component Modules**:
-  - `utils.js`: Safe string escaping (`safeString`), date normalization, formatting helpers, and UI toast notifications.
+- **State Management**: Application state (`window.currentData`) is managed cleanly inside global application context, enabling real-time switching between investigation tabs without re-querying the- **Component Modules**:
+  - `utils.js`: Safe string escaping (`safeString`), `parseMarkdown(text)` structural rendering engine, `sanitizeForAI(data)` payload pruning (`~1.5KB` AI optimization), date normalization, formatting helpers, and UI toast notifications.
   - `api.js`: Axios-based HTTP client encapsulating GET/POST requests with error handling and retry logic.
-  - `ui.js`: DOM controller managing indicator search chips, status badges, and loading states.
+  - `ui.js`: DOM controller managing indicator search chips, status badges, overview rendering (`AI False Positive Triage`, `Immediate Action Recommendations`), and loading states.
+  - `chat-widget.js`: Floating AI Conversational Assistant widget (`Priority 4`) with real-time contextual telemetry injection and quick-chip prompt execution.
   - `tabs/intelligence.js`: Multi-source correlation renderer for Threat Actor profiles, MITRE ATT&CK grid cards, provider breakdown bars, harvested IOC tables, and AlienVault OTX pulse reports.
   - `tabs/evidence.js`: Raw JSON inspector with copy/download controls.
   - `tabs/relationships.js`: Interactive node network visualization depicting domain/IP/hash connections.
-  - `tabs/export.js`: Client-side executive PDF briefing generator and CSV indicator exporter.
+  - `tabs/export.js`: Client-side executive PDF briefing generator, CSV indicator exporter, and multi-format AI Report Modal (`Priority 5, 7, 8`).
 
 ---
 
@@ -81,6 +81,7 @@ The frontend is built using **pure HTML5, CSS3, and modern modular JavaScript (E
 The backend runs on **Node.js 22 LTS and Express.js 4**, structured around clear architectural boundaries: routes, middleware, business logic controllers, utilities, and external API services.
 
 - **Asynchronous Concurrency**: The core investigation engine leverages `Promise.allSettled()` to fetch intelligence simultaneously across independent upstream APIs. This ensures **graceful degradation**—if an external feed is offline, rate-limited, or times out, the overall investigation completes successfully with the remaining provider data.
+- **Payload Capacity (`10MB`)**: Express `body-parser` limits (`express.json({ limit: '10mb' })`) are configured across all endpoints to accommodate massive multi-engine threat intelligence payloads (`VIRUSTOTAL` raw engine dumps, deep Shodan banner lists) without encountering `413 Request Entity Too Large` rejections.
 - **Caching Layer**: An in-memory cache (`node-cache`) with configurable Time-To-Live (TTL) stores normalized investigation payloads. Repeated queries to identical IOCs hit memory instantly, saving external API quota and returning results in under `5ms`.
 
 ---
@@ -118,7 +119,6 @@ sequenceDiagram
     OX-->>INV: Pulses, Tags, Related Indicators
     SH-->>INV: Open Ports, Services, CVEs
     US-->>INV: DOM Analysis & Screenshots
-
     INV->>INV: Calculate Deterministic Risk Score & Verdict
     INV->>INV: Correlate MITRE STIX 2.1 Techniques & APT Actors
     INV->>AI: synthesizeSummary(enrichedData)
@@ -139,19 +139,24 @@ sequenceDiagram
 
 ## 🤖 AI Risk Assessment & Correlation Pipeline
 
-Once raw telemetry is harvested, the backend executes three critical analytical passes:
+Once raw telemetry is harvested, the backend executes comprehensive analytical passes powered by Groq (`llama-3.3-70b-versatile`):
 
 1. **Deterministic Risk Scoring (`risk-calculator.js`)**:
-   Synthesizes quantitative metrics (e.g., VT detections / total engines, AbuseIPDB confidence score, OTX pulse count) into a unified risk score ranging from `0` to `100` along with a severity verdict (`CLEAN`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+   Synthesizes quantitative metrics (e.g., VT detections / total engines, AbuseIPDB confidence score, OTX pulse count) into a unified risk score ranging from `0` to `100` along with a severity verdict (`CLEAN`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`) and consensus percentage.
 2. **MITRE ATT&CK® STIX 2.1 Mapping (`mitre.service.js`)**:
-   Cross-references tags, behaviors, and malware signatures observed in OTX pulses and VirusTotal feeds against an internal STIX 2.1 database. Maps indicators directly to actionable techniques (e.g., `T1059 Command and Scripting Interpreter`, `T1566 Phishing`, `T1016 System Network Configuration Discovery`) along with confidence ratings and documented defensive mitigations.
+   Cross-references tags, behaviors, and malware signatures observed in OTX pulses and VirusTotal feeds against an internal STIX 2.1 database. Maps indicators directly to actionable techniques (`T1059 Command and Scripting Interpreter`, `T1566 Phishing`, `T1016 System Network Configuration Discovery`) along with confidence ratings and documented defensive mitigations.
 3. **Threat Actor Attribution (`actor.service.js`)**:
    Uses an O(1) case-insensitive alias index (`aliasIndex`) covering over 700+ naming variations across 8+ major APT profiles (`APT29 Cozy Bear`, `Lazarus Group`, `Conti`, `APT28 Fancy Bear`, `Scattered Spider`, `LockBit`, `Sandworm`, `Emotet`). Identifies the primary actor, origin flag, primary motivations, and historical campaigns.
-4. **Groq AI Synthesis (`groq.service.js`)**:
-   Submits the correlated payload to the Groq LLM API (`llama-3.3-70b-versatile`) with a specialized SOC analyst system prompt. The LLM generates:
-   - A concise executive briefing explaining what the indicator is and why it is flagged.
-   - Consensus analysis across independent providers.
-   - Actionable containment instructions tailored to the exact risk level.
+4. **Groq AI Investigation Synthesis (`groq.service.js`)**:
+   Submits correlated payload summaries to Groq LLM to generate natural language executive overviews, false-positive triage verdicts (`Likely True Positive vs. Benign`), immediate containment actions, and next steps.
+5. **AI Conversational Assistant (`Priority 4`)**:
+   Maintains multi-turn context (`POST /api/investigate/chat`) allowing analysts to inquire about specific MITRE procedures, scoring rationales, or response playbooks.
+6. **AI Smart Report & Alert Generator (`Priority 5, 7, 8`)**:
+   Synthesizes structured Markdown dossiers across 4 specialized formats (`POST /api/export/ai-brief`): C-suite **Executive Summary**, exhaustive **Technical Report**, **Slack/Email Alert (`Priority 7`)**, and **Incident Response Timeline (`Priority 8`)**. Uses `sanitizeForAI()` to prune payload footprints down to `~1.5KB`.
+7. **AI Bulk IOC Analysis & Campaign Tracking (`Priority 6 & 9`)**:
+   Analyzes indicator relationships (`POST /api/investigate/batch`), identifying ASN overlap, shared infrastructure patterns, and whether indicators signify an active APT campaign.
+8. **AI Natural Language History Search (`Priority 10`)**:
+   Parses conversational queries (`POST /api/history/ai-search`), matching intent against stored investigation records and returning structured analytical explanations alongside clickable IOC chips.
 
 ---
 
@@ -204,30 +209,49 @@ threat-intel-workbench-backend/
 │   ├── css/
 │   │   └── style.css        # Dark glassmorphism theme and CSS Grid styles
 │   └── js/
-│       ├── app.js           # Core initialization and event binding
+│       ├── app.js           # Core initialization, search bindings, and AI history search
 │       ├── api.js           # Axios HTTP client encapsulating backend routes
-│       ├── ui.js            # UI DOM controllers and status indicators
-│       ├── utils.js         # Security escaping (`safeString`) and helpers
+│       ├── ui.js            # UI DOM controllers, status indicators, and overview renderers
+│       ├── utils.js         # Security escaping (`safeString`), `parseMarkdown`, `sanitizeForAI`
+│       ├── chat-widget.js   # Floating AI Conversational Assistant widget (`Priority 4`)
 │       └── tabs/
 │           ├── intelligence.js  # Threat Actor, MITRE, Provider, and IOC UI renderer
 │           ├── evidence.js      # Raw JSON inspector and clipboard utilities
 │           ├── relationships.js # Interactive network visualization graph
-│           └── export.js        # Executive PDF report and CSV generation
-└── src/                     # Node.js / Express Backend Layer
-    ├── app.js               # Express application setup and middleware setup
-    ├── middleware/
-    │   ├── error-handler.js # Centralized JSON error dispatcher
-    │   └── validator.js     # Joi validation schemas and regular expressions
-    ├── routes/
-    │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch)
-    │   └── export.routes.js      # Export utility routes
-    ├── services/
-    │   ├── actor.service.js      # O(1) Threat Actor APT profile index & correlation
-    │   ├── mitre.service.js      # MITRE ATT&CK STIX 2.1 mapping database
-    │   ├── groq.service.js       # Groq AI LLM (`llama-3.3-70b-versatile`) integration
-    │   ├── virustotal.service.js # VirusTotal API v3 integration
-    │   ├── abuseipdb.service.js  # AbuseIPDB API v2 integration
-    │   ├── otx.service.js        # AlienVault OTX indicator and pulse integration
+│           └── export.js        # Executive PDF report, CSV export, and AI Report Modal (`Priority 5, 7, 8`)
+├── src/                     # Node.js / Express Backend Layer
+│   ├── app.js               # Express application setup, security headers, and route mounting
+│   ├── middleware/
+│   │   ├── logger.js        # Request logging & console instrumentation
+│   │   ├── rate-limit.js    # IP-based sliding window rate limiter (`100 req/15min`)
+│   │   ├── auth.js          # API key validation (`x-api-key`, `Bearer`) & provider status
+│   │   ├── error-handler.js # Centralized JSON error dispatcher
+│   │   └── validator.js     # Joi validation schemas across IP/Domain/Hash/URL/Batch
+│   ├── routes/
+│   │   ├── health.routes.js      # /health status and /api system metadata endpoints
+│   │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch/Chat)
+│   │   ├── export.routes.js      # /api/export/ai-brief multi-format report generator
+│   │   └── history.routes.js     # /api/history natural language search (`Priority 10`)
+│   ├── services/
+│   │   ├── actor.service.js      # O(1) Threat Actor APT profile index & correlation
+│   │   ├── mitre.service.js      # MITRE ATT&CK STIX 2.1 mapping database
+│   │   ├── groq.service.js       # Groq AI LLM (`llama-3.3-70b-versatile`) integration
+│   │   ├── virustotal.service.js # VirusTotal API v3 integration
+│   │   ├── abuseipdb.service.js  # AbuseIPDB API v2 integration
+│   │   ├── otx.service.js        # AlienVault OTX indicator and pulse integration
+│   │   ├── shodan.service.js     # Shodan open port and banner integration
+│   │   ├── urlscan.service.js    # URLScan domain/url telemetry integration
+│   │   └── cache.service.js      # Node-Cache in-memory TTL controller
+│   └── utils/
+│       └── risk-calculator.js    # Quantitative risk scoring and verdict engine
+└── tests/                   # Comprehensive Jest Automated Testing Suite (`32 tests across 6 suites`)
+    ├── auth.test.js              # API key authentication & middleware pass-through tests
+    ├── health.test.js            # Health check & system metadata route validation
+    ├── investigate.test.js       # End-to-end investigation endpoints & batch processing
+    ├── risk-calculator.test.js   # Risk math, severity thresholds & confidence scoring
+    ├── validator.test.js         # Input validation across IPv4/IPv6, domains, hashes, URLs
+    └── ai-features.test.js       # AI Chat, AI Briefing/Alert export, and AI History Search
+```# AlienVault OTX indicator and pulse integration
     │   ├── shodan.service.js     # Shodan open port and banner integration
     │   ├── urlscan.service.js    # URLScan domain/url telemetry integration
     │   └── cache.service.js      # Node-Cache in-memory TTL controller

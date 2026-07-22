@@ -1,5 +1,6 @@
 const { RISK_THRESHOLDS, PROVIDER_WEIGHTS } = require('../config/constants');
 
+/* eslint-disable-next-line no-unused-vars */
 function calculateRisk(results, ioc) {
     const scores = [];
     const weights = [];
@@ -32,6 +33,13 @@ function calculateRisk(results, ioc) {
         weights.push(PROVIDER_WEIGHTS.OTX);
     }
 
+    // URLScan
+    if (results.urlscan?.success) {
+        const urlscanScore = calculateURLScanScore(results.urlscan);
+        scores.push(urlscanScore);
+        weights.push(PROVIDER_WEIGHTS.URLSCAN || 0.10);
+    }
+
     // Calculate weighted average
     let weightedSum = 0;
     let totalWeight = 0;
@@ -52,6 +60,7 @@ function calculateRisk(results, ioc) {
         confidence: confidence,
         breakdown: getBreakdown(results),
         sources: scores.length,
+        total_sources: Object.keys(results).length,
         active_sources: Object.values(results).filter(r => r?.success).length
     };
 }
@@ -88,12 +97,21 @@ function calculateOTXScore(otx) {
     return 0;
 }
 
+function calculateURLScanScore(urlscan) {
+    let score = 0;
+    if (urlscan.verdicts?.malicious) score += 80;
+    else if (urlscan.verdicts?.phishing) score += 60;
+    else if (urlscan.verdicts?.benign) score = 0;
+    else if (urlscan.score !== undefined) score += Math.min(urlscan.score, 100);
+    return Math.min(score, 100);
+}
+
 function getVerdict(score) {
-    if (score >= 80) {
+    if (score >= RISK_THRESHOLDS.CRITICAL) {
         return { label: 'CRITICAL', color: '#ef4444', emoji: '🔴' };
-    } else if (score >= 60) {
+    } else if (score >= RISK_THRESHOLDS.HIGH) {
         return { label: 'HIGH', color: '#f59e0b', emoji: '🟠' };
-    } else if (score >= 30) {
+    } else if (score >= RISK_THRESHOLDS.MEDIUM) {
         return { label: 'MEDIUM', color: '#3b82f6', emoji: '🔵' };
     } else {
         return { label: 'LOW', color: '#22c55e', emoji: '🟢' };
@@ -102,6 +120,7 @@ function getVerdict(score) {
 
 function calculateConfidence(sourceCount, results) {
     const totalSources = Object.keys(results).length;
+    if (totalSources === 0) return 0;
     const activeSources = Object.values(results).filter(r => r?.success).length;
     const consistency = activeSources / totalSources;
     return Math.round(consistency * 100);
@@ -117,6 +136,8 @@ function getBreakdown(results) {
                 breakdown[key] = result.abuse_score;
             } else if (result.pulses !== undefined) {
                 breakdown[key] = Math.min(result.pulses * 10, 100);
+            } else if (key === 'urlscan') {
+                breakdown[key] = calculateURLScanScore(result);
             } else {
                 breakdown[key] = 0;
             }

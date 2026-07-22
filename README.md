@@ -1,6 +1,6 @@
-# 🛡️ Threat Intel Workbench Pro V3
+# 🛡️ Threat Intel Workbench Pro V4
 
-[![Version](https://img.shields.io/badge/Version-3.0.0--V3-F59E0B?style=flat-square)](https://github.com/arunchavan143/demo12)
+[![Version](https://img.shields.io/badge/Version-4.0.0--V4-F59E0B?style=flat-square)](https://github.com/arunchavan143/demo12)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express.js-4.x-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -11,25 +11,43 @@
 
 ## Project Overview
 
-**Threat Intel Workbench Pro V3** is a high-performance, multi-source Security Operations Center (SOC) investigation platform designed for cybersecurity analysts, incident responders, and threat hunters. It correlates real-time telemetry across **15+ integrated threat intelligence feeds**, maps observed behaviors to the **MITRE ATT&CK® STIX 2.1 framework**, attributes threat campaigns to known **Advanced Persistent Threat (APT) profiles**, and synthesizes natural-language executive briefings powered by **Groq AI (`llama-3.3-70b-versatile`)**.
+**Threat Intel Workbench Pro V4** is a high-performance, multi-source Security Operations Center (SOC) investigation platform designed for cybersecurity analysts, incident responders, and threat hunters. It correlates real-time telemetry across **15+ integrated threat intelligence feeds**, maps observed behaviors to the **MITRE ATT&CK® STIX 2.1 framework**, attributes threat campaigns to known **Advanced Persistent Threat (APT) profiles**, and synthesizes natural-language executive briefings powered by **Groq AI (`llama-3.3-70b-versatile`)**.
 
 ---
 
 ## Features
 
 - **🌐 Multi-Source Indicator Investigation**: Seamlessly query IP addresses, domain names, file hashes (MD5/SHA1/SHA256), URLs, and batch indicator lists from a unified, high-contrast dark glassmorphism interface.
-- **🧠 AI-Powered Threat Synthesis**: Automatically synthesizes multi-feed telemetry into cohesive natural-language executive summaries, consensus risk evaluations, and actionable containment steps via Groq AI.
+- **🧠 Full AI-Powered Intelligence Suite (Groq `llama-3.3-70b-versatile`)**:
+  - **AI Conversational Chat Assistant (`Priority 4`)**: Interactive floating chat widget allowing natural language questions ("Why is this score 75?", "Explain this MITRE technique", "What containment steps should we take?") backed by real-time investigation context and quick-chip prompts.
+  - **AI Smart Report & Alert Generator (`Priority 5, 7 & 8`)**: One-click multi-format synthesis inside a glassmorphic modal: C-suite **Executive Summary**, exhaustive **Technical Report**, high-urgency **Slack/Email Alert Templates (`Priority 7`)**, and chronological **Incident Response Timelines (`Priority 8`)**. Includes instant "Copy to Clipboard" and Markdown download.
+  - **AI Bulk IOC Analysis & Campaign Tracking (`Priority 6 & 9`)**: Pattern synthesis across batch indicators (`/api/investigate/batch`), ASN/infrastructure correlations, and APT campaign tracking card rendered directly at the top of batch investigations.
+  - **AI Natural Language History Search (`Priority 10`)**: Conversational search across historical investigations ("Show high risk domains", "Find IOCs with score > 70", "Show recent IP checks") accessible via `Ctrl+Enter` or button click right below the main search bar.
+  - **Markdown Parsing & Smart Pruning (`parseMarkdown` & `sanitizeForAI`)**: Custom markdown rendering engine (`utils.js`) formatting numbered MITRE TTP cards (`[1]`, `[2]`), code blocks, and bold headings into structured glassmorphic boxes. Payload pruning (`sanitizeForAI`) reduces multi-hundred KB raw dumps down to concise summaries under `~1.5KB` alongside Express `10MB` body limits to ensure lightning-fast, error-free AI generation (`413 Request Entity Too Large` prevention).
 - **🎯 MITRE ATT&CK® STIX 2.1 Mapping**: Correlates threat indicators and provider tags directly to documented MITRE tactics and techniques (`T1059`, `T1566`, `T1071`, `T1016`) with confidence badges and interactive mitigation guidance.
 - **🕵️ Threat Actor Attribution Engine**: Cross-references IOCs against an O(1) indexed alias database (`700+ aliases`) of major APT groups (`APT29 Cozy Bear`, `Lazarus Group`, `Conti`, `APT28`, `Scattered Spider`, `LockBit`, `Sandworm`, `Emotet`) to expose origin countries, primary motivations, and targeted industries.
 - **📊 6 Professional Analyst Tabs**:
-  1. **Overview**: AI executive summary, quantitative risk ring (`0-100`), provider status cards, and WHOIS/ASN/Geolocation infrastructure data.
+  1. **Overview**: AI executive summary, quantitative risk ring (`0-100`), provider status cards, false-positive triage evaluation, immediate action recommendations, and WHOIS/ASN/Geolocation infrastructure data.
   2. **Intelligence**: APT actor profile header, MITRE technique grid cards, provider breakdown progress bars, harvested IOC tables, observed TTPs, and AlienVault OTX pulse reports.
   3. **Evidence**: Raw JSON payloads across every provider with one-click copy and download for audit preservation.
   4. **Relationships**: Interactive node network graph visualizing structural connections between domains, IPs, and hashes.
   5. **Timeline**: Chronological indicator history tracking initial observation dates, SSL certificate windows, and recent detections.
   6. **Settings**: Real-time API health checks, in-memory TTL cache management with instant purge, and rate limit tracking.
-- **📑 Executive Briefing Exports**: One-click generation of cleanly formatted PDF investigation reports, CSV indicator exports suitable for SIEM/SOAR ingestion, and raw JSON evidence bundles.
+- **📑 Executive Briefing & Data Exports**: One-click generation of cleanly formatted PDF investigation reports, CSV indicator exports suitable for SIEM/SOAR ingestion, and raw JSON evidence bundles.
+- **🧪 Robust Automated Testing Suite (`Jest` & `ESLint`)**: 32 comprehensive unit and integration tests across 6 test suites covering risk scoring math, validation middleware, API authentication, health status, and full AI feature endpoints.
 - **🐳 Enterprise Containerization**: Multi-stage, lightweight Alpine Docker and Docker Compose setup for consistent local execution or production deployment.
+
+---
+
+## Useful Commands
+
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Start the local development server with auto-reloading (`nodemon`). |
+| `npm start` | Start the production Node.js server (`node src/app.js`). |
+| `npm test` | Run the complete Jest unit and integration testing suite (`tests/` - 32 tests across 6 suites). |
+| `npm run lint` | Run ESLint across `src/` to verify code formatting and syntax cleanliness. |
+| `npm run check` | Execute both ESLint validation and automated Jest tests (`npm run lint && npm test`). |
 
 ---
 
@@ -37,11 +55,11 @@
 
 ### Frontend
 - **HTML5 & CSS3**: Custom Dark Glassmorphism CSS architecture with HSL design variables and responsive CSS Grid/Flex layouts.
-- **JavaScript (ES6+)**: Modular, dependency-free vanilla single-page application (SPA) controller with optimized DOM interaction.
+- **JavaScript (ES6+)**: Modular, dependency-free vanilla single-page application (SPA) controller with optimized DOM interaction and custom markdown formatting (`parseMarkdown`).
 
 ### Backend
-- **Runtime & Framework**: Node.js 22 LTS, Express.js 4 RESTful API Gateway.
-- **Security & Middleware**: Helmet (Security Headers), CORS, Express-Rate-Limit, Joi Schema & Regex Input Validation.
+- **Runtime & Framework**: Node.js 22 LTS, Express.js 4 RESTful API Gateway (`10MB` body limits supported).
+- **Security & Middleware**: Helmet (Security Headers), CORS, Express-Rate-Limit (`100 req/15min`), Joi Schema & Regex Input Validation (`validateIP`, `validateDomain`, `validateHash`, `validateURL`, `validateBatch`).
 - **Caching**: Node-Cache in-memory Time-To-Live (TTL) store with automatic purge.
 
 ### Threat Intelligence APIs
@@ -52,7 +70,7 @@
 - **URLScan.io API**: DOM analysis, screenshot records, and phishing classifications.
 
 ### AI Components
-- **Groq SDK**: Large Language Model API (`llama-3.3-70b-versatile`) with specialized SOC analyst prompt engineering.
+- **Groq SDK**: Large Language Model API (`llama-3.3-70b-versatile`) with specialized SOC analyst prompt engineering for conversational chat (`Priority 4`), multi-format briefings (`Priority 5, 7, 8`), batch synthesis (`Priority 6 & 9`), and historical natural language search (`Priority 10`).
 
 ### Docker
 - **Multi-stage Build**: Alpine Linux containerization separating dependency build stages from runtime deployment.
@@ -182,35 +200,48 @@ threat-intel-workbench-backend/
 │   ├── css/
 │   │   └── style.css        # Dark glassmorphism theme and CSS Grid styles
 │   └── js/
-│       ├── app.js           # Core initialization and event binding
+│       ├── app.js           # Core initialization, search bindings, and AI history search
 │       ├── api.js           # Axios HTTP client encapsulating backend routes
-│       ├── ui.js            # UI DOM controllers and status indicators
-│       ├── utils.js         # Security escaping (`safeString`) and helpers
+│       ├── ui.js            # UI DOM controllers, status indicators, and overview renderers
+│       ├── utils.js         # Security escaping (`safeString`), `parseMarkdown`, `sanitizeForAI`
+│       ├── chat-widget.js   # Floating AI Conversational Assistant widget (`Priority 4`)
 │       └── tabs/
 │           ├── intelligence.js  # Threat Actor, MITRE, Provider, and IOC UI renderer
 │           ├── evidence.js      # Raw JSON inspector and clipboard utilities
 │           ├── relationships.js # Interactive network visualization graph
-│           └── export.js        # Executive PDF report and CSV generation
-└── src/                     # Node.js / Express Backend Layer
-    ├── app.js               # Express application setup and middleware setup
-    ├── middleware/
-    │   ├── error-handler.js # Centralized JSON error dispatcher
-    │   └── validator.js     # Joi validation schemas and regular expressions
-    ├── routes/
-    │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch)
-    │   └── export.routes.js      # Export utility routes
-    ├── services/
-    │   ├── actor.service.js      # O(1) Threat Actor APT profile index & correlation
-    │   ├── mitre.service.js      # MITRE ATT&CK STIX 2.1 mapping database
-    │   ├── groq.service.js       # Groq AI LLM (`llama-3.3-70b-versatile`) integration
-    │   ├── virustotal.service.js # VirusTotal API v3 integration
-    │   ├── abuseipdb.service.js  # AbuseIPDB API v2 integration
-    │   ├── otx.service.js        # AlienVault OTX indicator and pulse integration
-    │   ├── shodan.service.js     # Shodan open port and banner integration
-    │   ├── urlscan.service.js    # URLScan domain/url telemetry integration
-    │   └── cache.service.js      # Node-Cache in-memory TTL controller
-    └── utils/
-        └── risk-calculator.js    # Quantitative risk scoring and verdict engine
+│           └── export.js        # Executive PDF report, CSV export, and AI Report Modal (`Priority 5, 7, 8`)
+├── src/                     # Node.js / Express Backend Layer
+│   ├── app.js               # Express application setup, security headers, and route mounting
+│   ├── middleware/
+│   │   ├── logger.js        # Request logging & console instrumentation
+│   │   ├── rate-limit.js    # IP-based sliding window rate limiter (`100 req/15min`)
+│   │   ├── auth.js          # API key validation (`x-api-key`, `Bearer`) & provider status
+│   │   ├── error-handler.js # Centralized JSON error dispatcher
+│   │   └── validator.js     # Joi validation schemas across IP/Domain/Hash/URL/Batch
+│   ├── routes/
+│   │   ├── health.routes.js      # /health status and /api system metadata endpoints
+│   │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch/Chat)
+│   │   ├── export.routes.js      # /api/export/ai-brief multi-format report generator
+│   │   └── history.routes.js     # /api/history natural language search (`Priority 10`)
+│   ├── services/
+│   │   ├── actor.service.js      # O(1) Threat Actor APT profile index & correlation
+│   │   ├── mitre.service.js      # MITRE ATT&CK STIX 2.1 mapping database
+│   │   ├── groq.service.js       # Groq AI LLM (`llama-3.3-70b-versatile`) integration
+│   │   ├── virustotal.service.js # VirusTotal API v3 integration
+│   │   ├── abuseipdb.service.js  # AbuseIPDB API v2 integration
+│   │   ├── otx.service.js        # AlienVault OTX indicator and pulse integration
+│   │   ├── shodan.service.js     # Shodan open port and banner integration
+│   │   ├── urlscan.service.js    # URLScan domain/url telemetry integration
+│   │   └── cache.service.js      # Node-Cache in-memory TTL controller
+│   └── utils/
+│       └── risk-calculator.js    # Quantitative risk scoring and verdict engine
+└── tests/                   # Comprehensive Jest Automated Testing Suite (`32 tests across 6 suites`)
+    ├── auth.test.js              # API key authentication & middleware pass-through tests
+    ├── health.test.js            # Health check & system metadata route validation
+    ├── investigate.test.js       # End-to-end investigation endpoints & batch processing
+    ├── risk-calculator.test.js   # Risk math, severity thresholds & confidence scoring
+    ├── validator.test.js         # Input validation across IPv4/IPv6, domains, hashes, URLs
+    └── ai-features.test.js       # AI Chat, AI Briefing/Alert export, and AI History Search
 ```
 
 ---

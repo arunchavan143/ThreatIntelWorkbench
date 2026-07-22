@@ -216,3 +216,126 @@ function escapeHTML(str) {
 window.exportPDF = exportPDF;
 window.exportCSV = exportCSV;
 window.exportJSON = exportJSON;
+
+// ============================================================
+// AI REPORT EXPORT & SLACK/EMAIL ALERT GENERATOR (Priority 5 & 7)
+// ============================================================
+function openAIReportModal(initialFormat = 'executive') {
+    const data = window.currentEvidenceData;
+    if (!data || !data.ioc) {
+        alert('Please investigate an indicator first before generating an AI Report.');
+        return;
+    }
+
+    let modal = document.getElementById('ai-report-modal');
+    if (!modal) {
+        const modalHtml = `
+        <div id="ai-report-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
+            <div style="width:100%;max-width:750px;background:var(--bg-card);border:1px solid rgba(139,92,246,0.4);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.8);display:flex;flex-direction:column;max-height:85vh;overflow:hidden;">
+                <div style="padding:16px 20px;background:rgba(30,41,59,0.8);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color:#c084fc;font-size:20px;"></i>
+                        <div>
+                            <h3 style="margin:0;font-size:16px;color:#fff;">AI Smart Report & Alert Generator</h3>
+                            <span style="font-size:11px;color:#a855f7;">Groq Llama 3.3 70B Multi-Format Synthesis</span>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('ai-report-modal').style.display='none'" style="background:transparent;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;background:rgba(15,23,42,0.6);">
+                    <button class="ai-fmt-btn active" data-fmt="executive" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(139,92,246,0.5);background:rgba(139,92,246,0.2);color:#fff;font-size:12px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-briefcase"></i> Executive Summary</button>
+                    <button class="ai-fmt-btn" data-fmt="technical" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text-light);font-size:12px;cursor:pointer;"><i class="fa-solid fa-code"></i> Technical Report</button>
+                    <button class="ai-fmt-btn" data-fmt="alert" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text-light);font-size:12px;cursor:pointer;"><i class="fa-solid fa-bell"></i> Slack/Email Alert (Priority 7)</button>
+                    <button class="ai-fmt-btn" data-fmt="timeline" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text-light);font-size:12px;cursor:pointer;"><i class="fa-solid fa-clock-rotate-left"></i> IR Timeline (Priority 8)</button>
+                </div>
+                <div id="ai-report-content" style="flex:1;padding:20px;overflow-y:auto;font-family:var(--font-mono);font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap;background:rgba(15,23,42,0.9);">
+                    Generating AI dossier...
+                </div>
+                <div style="padding:14px 20px;background:rgba(30,41,59,0.8);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;">
+                    <button id="ai-report-copy-btn" style="padding:8px 16px;border-radius:8px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;color:#60a5fa;font-weight:600;font-size:13px;cursor:pointer;"><i class="fa-regular fa-copy"></i> Copy to Clipboard</button>
+                    <button id="ai-report-dl-btn" style="padding:8px 16px;border-radius:8px;background:linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);border:none;color:#fff;font-weight:600;font-size:13px;cursor:pointer;"><i class="fa-solid fa-download"></i> Download Report</button>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('ai-report-modal');
+
+        // Bind format tabs
+        const fmtBtns = modal.querySelectorAll('.ai-fmt-btn');
+        fmtBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                fmtBtns.forEach(b => { b.classList.remove('active'); b.style.background='rgba(255,255,255,0.05)'; b.style.color='var(--text-light)'; b.style.borderColor='var(--border)'; });
+                btn.classList.add('active');
+                btn.style.background='rgba(139,92,246,0.2)'; btn.style.color='#fff'; btn.style.borderColor='rgba(139,92,246,0.5)';
+                const fmt = btn.getAttribute('data-fmt');
+                fetchReportContent(fmt);
+            });
+        });
+
+        const copyBtn = document.getElementById('ai-report-copy-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const contentDiv = document.getElementById('ai-report-content');
+                const text = contentDiv ? (contentDiv.dataset.rawReport || contentDiv.innerText) : '';
+                navigator.clipboard.writeText(text).then(() => {
+                    const oldHtml = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                    setTimeout(() => copyBtn.innerHTML = oldHtml, 2000);
+                });
+            });
+        }
+
+        const dlBtn = document.getElementById('ai-report-dl-btn');
+        if (dlBtn) {
+            dlBtn.addEventListener('click', () => {
+                const contentDiv = document.getElementById('ai-report-content');
+                const text = contentDiv ? (contentDiv.dataset.rawReport || contentDiv.innerText) : '';
+                const activeBtn = modal.querySelector('.ai-fmt-btn.active');
+                const fmt = activeBtn ? activeBtn.getAttribute('data-fmt') : 'report';
+                const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `AI-Dossier-${window.currentEvidenceData?.ioc?.value || 'IOC'}-${fmt}.md`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+    }
+
+    modal.style.display = 'flex';
+    // Trigger initial format load
+    const activeBtn = modal.querySelector(`.ai-fmt-btn[data-fmt="${initialFormat}"]`);
+    if (activeBtn) activeBtn.click();
+    else fetchReportContent(initialFormat);
+}
+
+async function fetchReportContent(format = 'executive') {
+    const contentDiv = document.getElementById('ai-report-content');
+    if (!contentDiv) return;
+    contentDiv.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-dim);"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:10px;display:block;"></i> Generating AI ${format.toUpperCase()} report...</div>`;
+
+    try {
+        const payloadData = typeof sanitizeForAI === 'function' ? sanitizeForAI(window.currentEvidenceData) : window.currentEvidenceData;
+        const response = await fetch('/api/export/ai-brief', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: payloadData, format })
+        });
+        const result = await response.json();
+        if (result.success && result.report) {
+            contentDiv.dataset.rawReport = result.report;
+            contentDiv.innerHTML = typeof parseMarkdown === 'function' ? parseMarkdown(result.report) : result.report;
+        } else {
+            contentDiv.innerHTML = `<span style="color:var(--danger)">Error: ${result.error || result.message || 'Could not generate report.'}</span>`;
+        }
+    } catch (err) {
+        contentDiv.innerHTML = '<span style="color:var(--danger)">Failed to communicate with AI Export service.</span>';
+        console.error('AI Report error:', err);
+    }
+}
+
+window.openAIReportModal = openAIReportModal;

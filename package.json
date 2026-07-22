@@ -1,13 +1,14 @@
 {
   "name": "threat-intel-workbench-backend",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "Professional SOC analyst tool for IOC investigation",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "test": "jest",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "check": "npm run lint && npm test"
   },
   "dependencies": {
     "axios": "^1.6.0",
