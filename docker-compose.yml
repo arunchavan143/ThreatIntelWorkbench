@@ -9,6 +9,28 @@ services:
       - NODE_ENV=production
     env_file:
       - .env
-    volumes:
-      - ./logs:/app/logs
     restart: unless-stopped
+    depends_on:
+      - db
+    networks:
+      - soc_network
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: threat_intel
+      POSTGRES_USER: threat_user
+      POSTGRES_PASSWORD: threat_pass_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - soc_network
+
+volumes:
+  pgdata:
+
+networks:
+  soc_network:

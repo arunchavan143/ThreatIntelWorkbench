@@ -452,4 +452,102 @@ router.post('/chat', async (req, res, next) => {
     }
 });
 
+// ============================================================
+// BATCH STREAM SSE
+// ============================================================
+const SSEService = require('../services/sse.service');
+
+function detectType(value) {
+    if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(value)) return 'ip';
+    if (/^(?:(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]{0,62})?[a-zA-Z0-9]\.)+[a-zA-Z]{2,63})$/.test(value)) return 'domain';
+    if (/^[a-fA-F0-9]{32}$/.test(value) || /^[a-fA-F0-9]{40}$/.test(value) || /^[a-fA-F0-9]{64}$/.test(value)) return 'hash';
+    if (/^https?:\/\//i.test(value)) return 'url';
+    return 'unknown';
+}
+
+async function investigateIndicator(item) {
+    const type = detectType(item);
+    let data;
+    switch (type) {
+        case 'ip': {
+            const [vt, abuse, shodan, otx, geo, asn] = await Promise.all([
+                VirusTotalService.investigateIP(item).catch(err => ({ success: false, error: err.message })),
+                AbuseIPDBService.investigateIP(item).catch(err => ({ success: false, error: err.message })),
+                ShodanService.investigateIP(item).catch(err => ({ success: false, error: err.message })),
+                OTXService.investigateIP(item).catch(err => ({ success: false, error: err.message })),
+                GeolocationService.getLocation(item).catch(err => ({ success: false, error: err.message })),
+                ASNService.getASN(item).catch(err => ({ success: false, error: err.message }))
+            ]);
+            data = { vt, abuse, shodan, otx, geo, asn };
+            break;
+        }
+        case 'domain': {
+            const [vt, otx, whois, dns, ssl, ct, sub] = await Promise.all([
+                VirusTotalService.investigateDomain(item).catch(err => ({ success: false, error: err.message })),
+                OTXService.investigateDomain(item).catch(err => ({ success: false, error: err.message })),
+                WhoisService.lookup(item).catch(err => ({ success: false, error: err.message })),
+                DNSService.lookup(item).catch(err => ({ success: false, error: err.message })),
+                SSLService.getCertificate(item).catch(err => ({ success: false, error: err.message })),
+                CTService.getCertificates(item).catch(err => ({ success: false, error: err.message })),
+                SubdomainService.discover(item).catch(err => ({ success: false, error: err.message }))
+            ]);
+            data = { vt, otx, whois, dns, ssl, ct, subdomains: sub };
+            break;
+        }
+        case 'hash': {
+            const [vt, otx] = await Promise.all([
+                VirusTotalService.investigateHash(item).catch(err => ({ success: false, error: err.message })),
+                OTXService.investigateHash(item).catch(err => ({ success: false, error: err.message }))
+            ]);
+            data = { vt, otx };
+            break;
+        }
+        case 'url': {
+            const urlscan = await URLScanService.scan(item).catch(err => ({ success: false, error: err.message }));
+            data = { urlscan };
+            break;
+        }
+        default:
+            throw new Error(`Unsupported type for: ${item}`);
+    }
+    return { type, data };
+}
+
+router.post('/batch-stream', async (req, res) => {
+    try {
+        const { indicators } = req.body;
+        if (!indicators || !Array.isArray(indicators) || indicators.length === 0) {
+            return res.status(400).json({ success: false, error: 'Indicators array required' });
+        }
+        if (indicators.length > 20) {
+            return res.status(400).json({ success: false, error: 'Max 20 indicators per batch' });
+        }
+
+        const batchId = `batch_${Date.now()}`;
+        
+        // Start SSE stream first
+        SSEService.createBatchStream(batchId, indicators.length, res);
+        
+        // Process indicators asynchronously
+        const results = [];
+        for (let i = 0; i < indicators.length; i++) {
+            const item = indicators[i];
+            try {
+                const result = await investigateIndicator(item);
+                results.push({ indicator: item, data: result });
+                SSEService.sendProgress(batchId, { indicator: item, data: result });
+            } catch (error) {
+                SSEService.sendProgress(batchId, { indicator: item, error: error.message });
+            }
+        }
+        
+        // Return final results
+        SSEService.sendProgress(batchId); // Final update with done: true
+        
+    } catch (error) {
+        console.error('Batch Stream Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;

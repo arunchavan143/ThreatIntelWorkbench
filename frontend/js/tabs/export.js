@@ -316,7 +316,7 @@ function openAIReportModal(initialFormat = 'executive') {
 async function fetchReportContent(format = 'executive') {
     const contentDiv = document.getElementById('ai-report-content');
     if (!contentDiv) return;
-    contentDiv.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-dim);"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:10px;display:block;"></i> Generating AI ${format.toUpperCase()} report...</div>`;
+    showReportLoading('ai-report-content');
 
     try {
         const payloadData = typeof sanitizeForAI === 'function' ? sanitizeForAI(window.currentEvidenceData) : window.currentEvidenceData;
@@ -329,8 +329,10 @@ async function fetchReportContent(format = 'executive') {
         if (result.success && result.report) {
             contentDiv.dataset.rawReport = result.report;
             contentDiv.innerHTML = typeof parseMarkdown === 'function' ? parseMarkdown(result.report) : result.report;
+            hideReportLoading('ai-report-content');
         } else {
             contentDiv.innerHTML = `<span style="color:var(--danger)">Error: ${result.error || result.message || 'Could not generate report.'}</span>`;
+            hideReportLoading('ai-report-content');
         }
     } catch (err) {
         contentDiv.innerHTML = '<span style="color:var(--danger)">Failed to communicate with AI Export service.</span>';
@@ -339,3 +341,25 @@ async function fetchReportContent(format = 'executive') {
 }
 
 window.openAIReportModal = openAIReportModal;
+
+function showReportLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = `
+        <div style="padding:40px;text-align:center;color:var(--text-dark);">
+            <div class="score-ring pulse-ring" style="width:60px;height:60px;margin:0 auto 16px auto;background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.5);">
+                <i class="fa-solid fa-robot" style="color:var(--accent);font-size:24px;line-height:60px;"></i>
+            </div>
+            <p style="font-size:15px;color:var(--text);margin-bottom:8px;">Generating AI Report...</p>
+            <p style="font-size:12px;color:var(--text-dim);">Synthesizing intelligence from multiple sources</p>
+        </div>
+    `;
+}
+
+function hideReportLoading(containerId) {
+    // The content is usually overwritten, so this might just be a cleanup hook
+    const container = document.getElementById(containerId);
+    if (container && container.querySelector('.pulse-ring')) {
+        container.innerHTML = '';
+    }
+}

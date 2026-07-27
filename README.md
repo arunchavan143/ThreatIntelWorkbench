@@ -174,6 +174,91 @@ docker-compose down
 
 ---
 
+## Database Setup
+
+Threat Intel Workbench Pro uses PostgreSQL for persistent storage of investigations.
+
+### Option 1: Using Docker (Recommended)
+
+The included `docker-compose.yml` will start a PostgreSQL container automatically:
+
+```bash
+# Start the database and application together
+docker-compose up -d
+
+# Verify database is running
+docker-compose ps
+```
+
+### Option 2: Local PostgreSQL Installation
+
+1. **Install PostgreSQL**:
+   - **Ubuntu/Debian**: `sudo apt install postgresql postgresql-contrib`
+   - **macOS**: `brew install postgresql`
+   - **Windows**: Download from [postgresql.org](https://www.postgresql.org/download/windows/)
+
+2. **Start PostgreSQL**:
+   ```bash
+   # Ubuntu/Debian
+   sudo service postgresql start
+   
+   # macOS
+   brew services start postgresql
+   ```
+
+3. **Create Database**:
+   ```bash
+   # Connect to PostgreSQL
+   sudo -u postgres psql
+   
+   # Create database
+   CREATE DATABASE threat_intel;
+   
+   # Create user (optional)
+   CREATE USER your_user WITH PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE threat_intel TO your_user;
+   
+   # Exit
+   \q
+   ```
+
+4. **Run Migrations**:
+   ```bash
+   npm run migrate
+   ```
+
+5. **Verify Database**:
+   ```bash
+   # Connect and verify tables
+   psql -d threat_intel -c "\dt"
+   
+   # Expected tables:
+   # investigations
+   # SequelizeMeta (migrations)
+   ```
+
+### Environment Variables
+
+Update your `.env` file with database credentials:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=threat_intel
+DB_USER=your_user
+DB_PASSWORD=your_password
+```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `Connection refused` | Ensure PostgreSQL is running |
+| `Database does not exist` | Run `createdb threat_intel` |
+| `Migration failed` | Check credentials in `.env` |
+| `Permission denied` | Grant privileges to your user |
+
+---
 ## Folder Structure
 
 ```text

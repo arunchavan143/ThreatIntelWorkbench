@@ -1,0 +1,323 @@
+openapi: 3.0.0
+info:
+  title: Threat Intel Workbench Pro API
+  version: 4.0.0
+  description: Professional SOC investigation platform with AI-powered threat intelligence
+  contact:
+    name: Arun Chavan
+    email: arunchavan143@gmail.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+tags:
+  - name: Investigation
+    description: IOC investigation endpoints
+  - name: Batch
+    description: Batch and streaming operations
+  - name: History
+    description: Historical data access
+  - name: AI
+    description: AI-powered features
+  - name: System
+    description: System management
+
+paths:
+  /investigate/ip/{ip}:
+    get:
+      tags: [Investigation]
+      summary: Investigate IP address
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 8.8.8.8
+          description: IPv4 or IPv6 address
+      responses:
+        '200':
+          description: Successful investigation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestigationResponse'
+        '400':
+          description: Invalid IP format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /investigate/domain/{domain}:
+    get:
+      tags: [Investigation]
+      summary: Investigate domain
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+            example: google.com
+      responses:
+        '200':
+          description: Successful investigation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestigationResponse'
+
+  /investigate/hash/{hash}:
+    get:
+      tags: [Investigation]
+      summary: Investigate file hash
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 44d88612fea8a8f36de82e1278abb02f
+          description: MD5, SHA1, or SHA256 hash
+
+  /investigate/url:
+    get:
+      tags: [Investigation]
+      summary: Investigate URL
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+            example: https://google.com
+
+  /investigate/batch:
+    post:
+      tags: [Batch]
+      summary: Batch investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchRequest'
+      responses:
+        '200':
+          description: Batch results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /investigate/batch-stream:
+    post:
+      tags: [Batch]
+      summary: Batch investigation with SSE streaming
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchRequest'
+      responses:
+        '200':
+          description: SSE stream started
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /health:
+    get:
+      tags: [System]
+      summary: System health check
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /history:
+    get:
+      tags: [History]
+      summary: Investigation history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: History retrieved
+
+  /history/search:
+    get:
+      tags: [History]
+      summary: Natural language history search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Natural language query
+
+  /chat:
+    post:
+      tags: [AI]
+      summary: AI chat assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Why is this score 75?
+                investigation_id:
+                  type: string
+                  example: inv_1234567890
+      responses:
+        '200':
+          description: AI response generated
+
+  /mitre/sync:
+    post:
+      tags: [System]
+      summary: Sync MITRE STIX data
+      responses:
+        '200':
+          description: Sync completed
+
+  /export/ai-report:
+    post:
+      tags: [AI]
+      summary: Generate AI report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                investigation_id:
+                  type: string
+                format:
+                  type: string
+                  enum: [executive, technical, alert, timeline]
+      responses:
+        '200':
+          description: Report generated
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Invalid input format
+
+    InvestigationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            ioc:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [ip, domain, hash, url]
+                value:
+                  type: string
+            risk:
+              type: object
+              properties:
+                score:
+                  type: integer
+                  example: 0
+                verdict:
+                  type: string
+                  enum: [LOW, MEDIUM, HIGH, CRITICAL]
+                confidence:
+                  type: integer
+                  example: 100
+
+    BatchRequest:
+      type: object
+      required: [indicators]
+      properties:
+        indicators:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+
+    BatchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        batch_id:
+          type: string
+          example: batch_1234567890
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            successful:
+              type: integer
+            failed:
+              type: integer
+        results:
+          type: array
+          items:
+            type: object
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        uptime:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        apis:
+          type: object
+          properties:
+            virustotal:
+              type: boolean
+            abuseipdb:
+              type: boolean
+            shodan:
+              type: boolean
+            otx:
+              type: boolean
+            urlscan:
+              type: boolean
+            groq:
+              type: boolean

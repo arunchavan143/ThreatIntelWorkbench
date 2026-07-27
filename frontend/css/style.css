@@ -824,3 +824,267 @@ body {
     transition: opacity 0.2s;
 }
 #ai-chat-send-btn:hover { opacity: 0.9; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVENESS IMPROVEMENTS
+   ============================================================ */
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+    .results-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 180px;
+        overflow-y: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 6px 10px;
+        display: flex;
+        gap: 4px;
+    }
+    
+    .results-sidebar .nav-item {
+        flex: 0 1 auto;
+        min-width: 70px;
+        justify-content: center;
+        padding: 4px 10px;
+        font-size: 11px;
+        margin: 2px;
+        width: auto;
+        border-radius: 4px;
+    }
+    
+    .results-sidebar .nav-item i {
+        font-size: 12px;
+        margin-right: 4px;
+    }
+    
+    .results-sidebar .nav-item span {
+        font-size: 10px;
+    }
+    
+    .results-sidebar .nav-label {
+        display: none;
+    }
+    
+    .results-sidebar .nav-divider {
+        display: none;
+    }
+    
+    .results-main {
+        padding: 12px 14px;
+    }
+    
+    .ai-summary {
+        flex-direction: column;
+        padding: 14px;
+    }
+    
+    .score-ring {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px;
+        margin-top: 4px;
+    }
+    
+    .ring-container {
+        margin: 0;
+        width: 70px;
+        height: 70px;
+    }
+    
+    .ring-value {
+        font-size: 18px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .topbar {
+        padding: 6px 12px;
+        height: 44px;
+        flex-wrap: wrap;
+    }
+    
+    .topbar-left .logo {
+        font-size: 12px;
+    }
+    
+    .topbar-right .status-dot {
+        width: 5px;
+        height: 5px;
+    }
+    
+    .topbar-right span {
+        font-size: 10px;
+    }
+    
+    .btn-export {
+        font-size: 10px;
+        padding: 3px 10px;
+    }
+    
+    .icon-btn {
+        font-size: 12px;
+    }
+    
+    .back-btn {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .results-sidebar {
+        max-height: 140px;
+        padding: 4px 8px;
+        gap: 2px;
+    }
+    
+    .results-sidebar .nav-item {
+        min-width: 55px;
+        padding: 3px 6px;
+        font-size: 9px;
+        margin: 1px;
+    }
+    
+    .results-sidebar .nav-item i {
+        font-size: 10px;
+        margin-right: 2px;
+    }
+    
+    .results-sidebar .nav-item span {
+        font-size: 8px;
+    }
+    
+    .results-main {
+        padding: 10px 12px;
+    }
+    
+    .two-col {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .ai-meta {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 10px;
+    }
+    
+    .ai-meta-item {
+        font-size: 11px;
+    }
+    
+    .card {
+        padding: 10px 12px;
+    }
+    
+    .source-row {
+        font-size: 11px;
+        padding: 3px 0;
+    }
+    
+    .provider-bar .name {
+        width: 55px;
+        font-size: 10px;
+    }
+    
+    .vector-row .name {
+        width: 65px;
+        font-size: 10px;
+    }
+    
+    .infra-row {
+        font-size: 11px;
+        padding: 2px 0;
+    }
+    
+    .rec-row {
+        font-size: 11px;
+    }
+    
+    /* Search Page Mobile */
+    .logo-main .icon {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    
+    .logo-main h1 {
+        font-size: 20px;
+    }
+    
+    .logo-main p {
+        font-size: 12px;
+    }
+    
+    .input-tab {
+        padding: 4px 8px;
+        font-size: 9px;
+    }
+    
+    .input-tab i {
+        font-size: 10px;
+    }
+    
+    .search-input {
+        font-size: 12px;
+        padding: 10px 12px;
+        padding-right: 80px;
+    }
+    
+    .search-btn {
+        padding: 5px 10px;
+        font-size: 10px;
+    }
+    
+    .search-btn i {
+        font-size: 10px;
+    }
+    
+    .search-hint {
+        font-size: 10px;
+    }
+    
+    .recent-chips .ioc-chip {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+    
+    .feed-pill {
+        font-size: 8px;
+        padding: 2px 8px;
+    }
+    
+    .feed-pill .dot {
+        width: 5px;
+        height: 5px;
+    }
+    
+    /* Footer */
+    .footer-bar {
+        font-size: 9px;
+        padding: 3px 10px;
+        height: 24px;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .footer-bar .items {
+        gap: 8px;
+    }
+    
+    /* Batch Feedback */
+    #batchFeedback {
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+    }
+}
