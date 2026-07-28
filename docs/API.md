@@ -1,4 +1,4 @@
-# Threat Intel Workbench Pro - API Documentation
+# Threat Intel Workbench Pro V4 - API Documentation
 
 ## Overview
 
@@ -341,20 +341,12 @@ This tool is designed for local SOC analyst use. Authentication is intentionally
 
 ### 6. Batch Streaming (SSE)
 
-**Endpoint:** `POST /investigate/batch-stream`
+**Endpoint:** `GET /investigate/batch-stream?batchId=...`
 
 **Description:** Batch investigation with Server-Sent Events for real-time progress updates.
 
 **Headers:**
-- `Content-Type: application/json`
 - `Accept: text/event-stream`
-
-**Request Body:**
-```json
-{
-  "indicators": ["8.8.8.8", "google.com", "e9c028ec..."]
-}
-```
 
 **Response:** Server-Sent Events stream
 
@@ -442,7 +434,7 @@ data: {"error":"Failed to process indicator"}
 
 ### 9. AI Chat Assistant
 
-**Endpoint:** `POST /chat`
+**Endpoint:** `POST /investigate/chat`
 
 **Description:** Ask natural language questions about the current investigation.
 
@@ -525,28 +517,31 @@ data: {"error":"Failed to process indicator"}
 
 ### 12. History Search (Natural Language)
 
-**Endpoint:** `GET /history/search?q=critical+ips`
+**Endpoint:** `POST /history/ai-search`
 
-**Description:** Search historical investigations using natural language.
+**Description:** Search historical investigations using natural language AI query.
 
-**Parameters:**
-| Name | Type | Location | Required | Description |
-|------|------|----------|----------|-------------|
-| q | string | query | Yes | Natural language search query |
+**Headers:**
+- `Content-Type: application/json`
+
+**Request Body:**
+```json
+{
+  "query": "Show me all critical IPs from last week"
+}
+```
 
 **Response (200 OK):**
 ```json
 {
   "success": true,
-  "query": "critical ips",
-  "count": 5,
-  "results": [
+  "query": "Show me all critical IPs from last week",
+  "answer": "Here are the critical IPs...",
+  "matching_iocs": [
     {
-      "id": 1,
       "ioc": "185.220.101.42",
       "type": "ip",
-      "verdict": "CRITICAL",
-      "timestamp": "2026-07-27T12:34:56.789Z"
+      "verdict": "CRITICAL"
     }
   ]
 }

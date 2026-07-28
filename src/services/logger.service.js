@@ -22,7 +22,8 @@ class LoggerService {
                 console.error('Database Investigation model not initialized');
             }
         } catch (error) {
-            console.error('Error writing investigation log to DB:', error.message);
+            console.error('Error writing investigation log to DB:', error);
+            require('fs').writeFileSync('error-debug.json', JSON.stringify({ message: error.message, stack: error.stack, error: error }, null, 2));
         }
     }
 

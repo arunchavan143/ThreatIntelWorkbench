@@ -1,4 +1,4 @@
-# Threat Intel Workbench Pro - System Architecture
+# Threat Intel Workbench Pro V4 - System Architecture
 
 ## Overview
 
@@ -389,7 +389,7 @@ services:
 | ABUSEIPDB_API_KEY | AbuseIPDB API key |
 | SHODAN_API_KEY | Shodan API key |
 | OTX_API_KEY | AlienVault OTX API key |
-| URLSCAN_API_KEY | URLScan API key |
+| URLScan_API_KEY | URLScan API key |
 | CACHE_TTL_SECONDS | Cache TTL (1800) |
 
 ---
@@ -462,7 +462,7 @@ services:
 
 | Enhancement | Description | Priority |
 |-------------|-------------|----------|
-| **WebSocket** | Full-duplex batch streaming | Medium |
+| **YARA Rule Engine** | Automated static analysis | Medium |
 | **Redis Cache** | Distributed caching for scaling | Medium |
 | **TAXII 2.1** | Automated threat feed ingestion | Low |
 | **RBAC** | Multi-user authentication | Low |
