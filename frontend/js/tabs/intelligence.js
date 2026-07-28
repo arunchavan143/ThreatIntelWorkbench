@@ -7,6 +7,7 @@
  * Called from app.js after investigation completes
  */
 function renderIntelligenceTab(data) {
+    showMitreLoading();
     const container = document.getElementById('intelligenceTab');
     if (!container) return;
     
@@ -521,6 +522,7 @@ function renderIntelligenceTab(data) {
     
     // Inject modal styles dynamically if not already present
     injectIntelStyles();
+    hideMitreLoading();
 }
 
 // ============================================================
@@ -652,3 +654,20 @@ function injectIntelStyles() {
 // EXPOSE FUNCTIONS GLOBALLY
 // ============================================================
 window.renderIntelligenceTab = renderIntelligenceTab;
+
+function showMitreLoading() {
+    const container = document.getElementById('mitreContainer');
+    if (!container) return;
+    container.innerHTML = `
+        <div style="padding:30px 20px;text-align:center;color:var(--text-dark);">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size:28px;display:block;margin-bottom:12px;color:var(--accent);"></i>
+            <p style="font-size:14px;">Synchronizing MITRE ATT&CK data...</p>
+            <p style="font-size:12px;margin-top:4px;">This may take a few moments</p>
+        </div>
+    `;
+}
+
+function hideMitreLoading() {
+    const container = document.getElementById('mitreContainer');
+    if (container) container.innerHTML = '';
+}

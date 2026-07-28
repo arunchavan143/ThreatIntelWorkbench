@@ -163,3 +163,54 @@ const AIChatWidget = {
 document.addEventListener('DOMContentLoaded', () => {
     AIChatWidget.init();
 });
+
+// ============================================================
+// CHAT WIDGET TOGGLE
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const widget = document.getElementById('chatWidget');
+    const toggleBtn = document.querySelector('.chat-toggle');
+    const closeBtn = widget ? widget.querySelector('.chat-close') : null;
+    
+    if (widget && toggleBtn) {
+        // Toggle widget visibility
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            widget.classList.toggle('collapsed');
+            if (!widget.classList.contains('collapsed')) {
+                const input = widget.querySelector('#chatInputField');
+                if (input) setTimeout(() => input.focus(), 300);
+            }
+        });
+        
+        // Close button
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                widget.style.display = 'none';
+                toggleBtn.style.display = 'flex';
+            });
+        }
+        
+        // Initialize collapsed state
+        widget.classList.add('collapsed');
+    }
+});
+
+// Auto-expand widget when investigation results load
+function expandChatWidget() {
+    const widget = document.getElementById('chatWidget');
+    if (widget && widget.classList.contains('collapsed')) {
+        widget.classList.remove('collapsed');
+        const input = widget.querySelector('#chatInputField');
+        if (input) setTimeout(() => input.focus(), 300);
+    }
+}
+
+// Auto-hide widget when on search page
+function collapseChatWidget() {
+    const widget = document.getElementById('chatWidget');
+    if (widget && !widget.classList.contains('collapsed')) {
+        widget.classList.add('collapsed');
+    }
+}

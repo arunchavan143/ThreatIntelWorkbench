@@ -263,7 +263,7 @@ async function searchNaturalLanguage(query = '', history = []) {
     }
 
     const historySummary = history.slice(0, 30).map((h, i) =>
-        `[#${i}] IOC: ${h.ioc} (${h.type}) | Verdict: ${h.verdict} | Score: ${h.risk_score} | Sources: ${(h.sources || []).join(', ')} | Date: ${h.timestamp}`
+        `[#${i}] IOC: ${h.ioc} (${h.type}) | Verdict: ${h.verdict} | Score: ${h.risk_score} | Sources: ${h.sources || 0} | Date: ${h.timestamp}`
     ).join('\n');
 
     const prompt = `You are an AI Search Engine for SOC investigation logs.

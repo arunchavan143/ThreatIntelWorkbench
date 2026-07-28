@@ -6,6 +6,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE_ATT&CK-STIX_2.1-EF4444?style=flat-square&logo=mitre&logoColor=white)](https://attack.mitre.org/)
 [![AI Powered](https://img.shields.io/badge/AI_Powered-Groq_Llama_3.3-8B5CF6?style=flat-square)](https://groq.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.x-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org/)
 
 ---
 
@@ -13,16 +14,20 @@
 
 **Threat Intel Workbench Pro V4** is a high-performance, multi-source Security Operations Center (SOC) investigation platform designed for cybersecurity analysts, incident responders, and threat hunters. It correlates real-time telemetry across **15+ integrated threat intelligence feeds**, maps observed behaviors to the **MITRE ATT&CK® STIX 2.1 framework**, attributes threat campaigns to known **Advanced Persistent Threat (APT) profiles**, and synthesizes natural-language executive briefings powered by **Groq AI (`llama-3.3-70b-versatile`)**.
 
+With **Version 4.0**, the platform now features a robust **PostgreSQL** database backend for persistent historical storage and **Server-Sent Events (SSE)** for real-time progress streaming during large batch investigations.
+
 ---
 
 ## Features
 
 - **🌐 Multi-Source Indicator Investigation**: Seamlessly query IP addresses, domain names, file hashes (MD5/SHA1/SHA256), URLs, and batch indicator lists from a unified, high-contrast dark glassmorphism interface.
+- **🐘 PostgreSQL Persistent Storage (New in V4)**: Robust relational database backend to automatically retain all historical investigation records for long-term trend analysis and instantaneous querying.
+- **⚡ Real-Time SSE Progress Streaming (New in V4)**: Real-time Server-Sent Events (SSE) push live scanning progress directly to the UI for massive batch indicator investigations without timeout risks.
 - **🧠 Full AI-Powered Intelligence Suite (Groq `llama-3.3-70b-versatile`)**:
   - **AI Conversational Chat Assistant (`Priority 4`)**: Interactive floating chat widget allowing natural language questions ("Why is this score 75?", "Explain this MITRE technique", "What containment steps should we take?") backed by real-time investigation context and quick-chip prompts.
   - **AI Smart Report & Alert Generator (`Priority 5, 7 & 8`)**: One-click multi-format synthesis inside a glassmorphic modal: C-suite **Executive Summary**, exhaustive **Technical Report**, high-urgency **Slack/Email Alert Templates (`Priority 7`)**, and chronological **Incident Response Timelines (`Priority 8`)**. Includes instant "Copy to Clipboard" and Markdown download.
   - **AI Bulk IOC Analysis & Campaign Tracking (`Priority 6 & 9`)**: Pattern synthesis across batch indicators (`/api/investigate/batch`), ASN/infrastructure correlations, and APT campaign tracking card rendered directly at the top of batch investigations.
-  - **AI Natural Language History Search (`Priority 10`)**: Conversational search across historical investigations ("Show high risk domains", "Find IOCs with score > 70", "Show recent IP checks") accessible via `Ctrl+Enter` or button click right below the main search bar.
+  - **AI Natural Language History Search (`Priority 10`)**: Conversational search across historical PostgreSQL investigations ("Show high risk domains", "Find IOCs with score > 70", "Show recent IP checks") accessible via `Ctrl+Enter` or button click right below the main search bar.
   - **Markdown Parsing & Smart Pruning (`parseMarkdown` & `sanitizeForAI`)**: Custom markdown rendering engine (`utils.js`) formatting numbered MITRE TTP cards (`[1]`, `[2]`), code blocks, and bold headings into structured glassmorphic boxes. Payload pruning (`sanitizeForAI`) reduces multi-hundred KB raw dumps down to concise summaries under `~1.5KB` alongside Express `10MB` body limits to ensure lightning-fast, error-free AI generation (`413 Request Entity Too Large` prevention).
 - **🎯 MITRE ATT&CK® STIX 2.1 Mapping**: Correlates threat indicators and provider tags directly to documented MITRE tactics and techniques (`T1059`, `T1566`, `T1071`, `T1016`) with confidence badges and interactive mitigation guidance.
 - **🕵️ Threat Actor Attribution Engine**: Cross-references IOCs against an O(1) indexed alias database (`700+ aliases`) of major APT groups (`APT29 Cozy Bear`, `Lazarus Group`, `Conti`, `APT28`, `Scattered Spider`, `LockBit`, `Sandworm`, `Emotet`) to expose origin countries, primary motivations, and targeted industries.
@@ -48,6 +53,8 @@
 | `npm test` | Run the complete Jest unit and integration testing suite (`tests/` - 32 tests across 6 suites). |
 | `npm run lint` | Run ESLint across `src/` to verify code formatting and syntax cleanliness. |
 | `npm run check` | Execute both ESLint validation and automated Jest tests (`npm run lint && npm test`). |
+| `npm run migrate` | Apply database migrations to PostgreSQL |
+| `npm run seed` | Seed database with initial data |
 
 ---
 
@@ -55,10 +62,11 @@
 
 ### Frontend
 - **HTML5 & CSS3**: Custom Dark Glassmorphism CSS architecture with HSL design variables and responsive CSS Grid/Flex layouts.
-- **JavaScript (ES6+)**: Modular, dependency-free vanilla single-page application (SPA) controller with optimized DOM interaction and custom markdown formatting (`parseMarkdown`).
+- **JavaScript (ES6+)**: Modular, dependency-free vanilla single-page application (SPA) controller with optimized DOM interaction and custom markdown formatting (`parseMarkdown`), fully integrated with **Server-Sent Events (SSE)**.
 
 ### Backend
 - **Runtime & Framework**: Node.js 22 LTS, Express.js 4 RESTful API Gateway (`10MB` body limits supported).
+- **Database**: PostgreSQL with Sequelize ORM for scalable historical storage.
 - **Security & Middleware**: Helmet (Security Headers), CORS, Express-Rate-Limit (`100 req/15min`), Joi Schema & Regex Input Validation (`validateIP`, `validateDomain`, `validateHash`, `validateURL`, `validateBatch`).
 - **Caching**: Node-Cache in-memory Time-To-Live (TTL) store with automatic purge.
 
@@ -73,15 +81,15 @@
 - **Groq SDK**: Large Language Model API (`llama-3.3-70b-versatile`) with specialized SOC analyst prompt engineering for conversational chat (`Priority 4`), multi-format briefings (`Priority 5, 7, 8`), batch synthesis (`Priority 6 & 9`), and historical natural language search (`Priority 10`).
 
 ### Docker
-- **Multi-stage Build**: Alpine Linux containerization separating dependency build stages from runtime deployment.
+- **Multi-stage Build**: Alpine Linux containerization separating dependency build stages from runtime deployment. `docker-compose` orchestrated alongside PostgreSQL.
 
 ---
 
 ## Architecture
 
-Threat Intel Workbench Pro operates on a decoupled REST API gateway and modular presentation architecture. The backend leverages `Promise.allSettled()` to query upstream intelligence feeds concurrently, ensuring graceful degradation if individual feeds experience timeouts or rate limits. Normalized telemetry is processed through a quantitative risk calculator, correlated against MITRE STIX 2.1 and Threat Actor indices, and passed to Groq AI for briefing synthesis.
+Threat Intel Workbench Pro operates on a decoupled REST API gateway and modular presentation architecture. The backend leverages `Promise.allSettled()` to query upstream intelligence feeds concurrently, ensuring graceful degradation if individual feeds experience timeouts or rate limits. Normalized telemetry is processed through a quantitative risk calculator, correlated against MITRE STIX 2.1 and Threat Actor indices, and passed to Groq AI for briefing synthesis. All data is reliably persisted in PostgreSQL.
 
-For a comprehensive technical dive including data flow sequence diagrams, security controls, and component breakdowns, read our detailed architecture document:
+For a comprehensive technical dive including data flow sequence diagrams, database schemas, security controls, and component breakdowns, read our detailed architecture document:
 
 👉 **[System Architecture Documentation (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md)**
 
@@ -114,6 +122,7 @@ For a comprehensive technical dive including data flow sequence diagrams, securi
 ### Prerequisites
 - **Node.js**: v18.x or v22.x LTS
 - **npm**: v9.x or higher
+- **PostgreSQL**: Local instance or Docker required
 - **Docker & Docker Compose** *(Optional for containerized run)*
 
 ### Option 1: Local Installation
@@ -130,12 +139,20 @@ For a comprehensive technical dive including data flow sequence diagrams, securi
    ```
 
 3. **Configure environment variables**:
-   Copy the `.env.example` template to `.env` and insert your upstream API keys:
+   Copy the `.env.example` template to `.env` and insert your upstream API keys and Database connection:
    ```bash
    cp .env.example .env
    ```
    ```env
    PORT=3000
+   NODE_ENV=development
+   
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=threat_intel
+   DB_USER=your_user
+   DB_PASSWORD=your_password
+
    GROQ_API_KEY=your_groq_api_key_here
    VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
    ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
@@ -144,12 +161,17 @@ For a comprehensive technical dive including data flow sequence diagrams, securi
    URLSCAN_API_KEY=your_urlscan_api_key_here
    ```
 
-4. **Start the development server**:
+4. **Run Migrations**:
+   ```bash
+   npm run migrate
+   ```
+
+5. **Start the development server**:
    ```bash
    npm run dev
    ```
 
-5. **Access the platform**:
+6. **Access the platform**:
    Open `http://localhost:3000` in your browser.
 
 ---
@@ -174,12 +196,85 @@ docker-compose down
 
 ---
 
+## Database Setup
+
+Threat Intel Workbench Pro V4 natively uses PostgreSQL for persistent storage of investigations.
+
+### Option 1: Using Docker (Recommended)
+
+The included `docker-compose.yml` will start a PostgreSQL container automatically alongside the app:
+
+```bash
+# Start the database and application together
+docker-compose up -d
+
+# Verify database is running
+docker-compose ps
+```
+
+### Option 2: Local PostgreSQL Installation
+
+1. **Install PostgreSQL**:
+   - **Ubuntu/Debian**: `sudo apt install postgresql postgresql-contrib`
+   - **macOS**: `brew install postgresql`
+   - **Windows**: Download from [postgresql.org](https://www.postgresql.org/download/windows/)
+
+2. **Start PostgreSQL**:
+   ```bash
+   # Ubuntu/Debian
+   sudo service postgresql start
+   
+   # macOS
+   brew services start postgresql
+   ```
+
+3. **Create Database**:
+   ```bash
+   # Connect to PostgreSQL
+   sudo -u postgres psql
+   
+   # Create database
+   CREATE DATABASE threat_intel;
+   
+   # Create user (optional)
+   CREATE USER your_user WITH PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE threat_intel TO your_user;
+   
+   # Exit
+   \q
+   ```
+
+4. **Run Migrations**:
+   ```bash
+   npm run migrate
+   ```
+
+5. **Verify Database**:
+   ```bash
+   # Connect and verify tables
+   psql -d threat_intel -c "\dt"
+   
+   # Expected tables:
+   # investigations
+   # SequelizeMeta (migrations)
+   ```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `Connection refused` | Ensure PostgreSQL is running |
+| `Database does not exist` | Run `createdb threat_intel` |
+| `Migration failed` | Check credentials in `.env` |
+| `Permission denied` | Grant privileges to your user |
+
+---
 ## Folder Structure
 
 ```text
 threat-intel-workbench-backend/
 ├── Dockerfile               # Multi-stage production Alpine build
-├── docker-compose.yml       # Container orchestration & volume mapping
+├── docker-compose.yml       # Container orchestration & PostgreSQL volume mapping
 ├── .dockerignore            # Build context exclusions
 ├── .env.example             # Template for API keys and configuration
 ├── package.json             # Project dependencies and script definitions
@@ -189,19 +284,13 @@ threat-intel-workbench-backend/
 │   ├── API.md               # REST API endpoints and payload examples
 │   ├── USER_GUIDE.md        # Comprehensive analyst operational manual
 │   └── screenshots/         # Embedded application previews
-│       ├── home.png
-│       ├── overview.png
-│       ├── intelligence.png
-│       ├── evidence.png
-│       ├── relationship.png
-│       └── timeline.png
 ├── frontend/                # Client-Side SPA Presentation Layer
 │   ├── index.html           # Single-page application shell
 │   ├── css/
 │   │   └── style.css        # Dark glassmorphism theme and CSS Grid styles
 │   └── js/
 │       ├── app.js           # Core initialization, search bindings, and AI history search
-│       ├── api.js           # Axios HTTP client encapsulating backend routes
+│       ├── api.js           # Axios HTTP client handling standard queries and SSE streaming
 │       ├── ui.js            # UI DOM controllers, status indicators, and overview renderers
 │       ├── utils.js         # Security escaping (`safeString`), `parseMarkdown`, `sanitizeForAI`
 │       ├── chat-widget.js   # Floating AI Conversational Assistant widget (`Priority 4`)
@@ -212,6 +301,11 @@ threat-intel-workbench-backend/
 │           └── export.js        # Executive PDF report, CSV export, and AI Report Modal (`Priority 5, 7, 8`)
 ├── src/                     # Node.js / Express Backend Layer
 │   ├── app.js               # Express application setup, security headers, and route mounting
+│   ├── models/
+│   │   ├── index.js         # Sequelize database configuration and models loader
+│   │   └── investigation.js # Investigation record Sequelize Model Schema
+│   ├── migrations/          # Sequelize Postgres migration scripts
+│   ├── seeders/             # Sequelize Postgres database seeders
 │   ├── middleware/
 │   │   ├── logger.js        # Request logging & console instrumentation
 │   │   ├── rate-limit.js    # IP-based sliding window rate limiter (`100 req/15min`)
@@ -220,7 +314,7 @@ threat-intel-workbench-backend/
 │   │   └── validator.js     # Joi validation schemas across IP/Domain/Hash/URL/Batch
 │   ├── routes/
 │   │   ├── health.routes.js      # /health status and /api system metadata endpoints
-│   │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch/Chat)
+│   │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch/Chat/SSE)
 │   │   ├── export.routes.js      # /api/export/ai-brief multi-format report generator
 │   │   └── history.routes.js     # /api/history natural language search (`Priority 10`)
 │   ├── services/
@@ -232,6 +326,7 @@ threat-intel-workbench-backend/
 │   │   ├── otx.service.js        # AlienVault OTX indicator and pulse integration
 │   │   ├── shodan.service.js     # Shodan open port and banner integration
 │   │   ├── urlscan.service.js    # URLScan domain/url telemetry integration
+│   │   ├── logger.service.js     # Database interaction service for history storage
 │   │   └── cache.service.js      # Node-Cache in-memory TTL controller
 │   └── utils/
 │       └── risk-calculator.js    # Quantitative risk scoring and verdict engine
@@ -249,17 +344,16 @@ threat-intel-workbench-backend/
 ## Documentation
 
 - 📖 **[User Guide (`docs/USER_GUIDE.md`)](docs/USER_GUIDE.md)**: Operational manual covering investigation workflows, tab breakdowns, and export procedures.
-- ⚙️ **[API Reference (`docs/API.md`)](docs/API.md)**: Complete REST API documentation including endpoint paths, parameters, and JSON schemas.
-- 🏗️ **[System Architecture (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md)**: Comprehensive technical specification detailing Mermaid flowcharts, multi-feed concurrency, and security defense layers.
+- ⚙️ **[API Reference (`docs/API.md`)](docs/API.md)**: Complete REST API documentation including endpoint paths, parameters, JSON schemas, and Server-Sent Events (SSE).
+- 🏗️ **[System Architecture (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md)**: Comprehensive technical specification detailing Mermaid flowcharts, PostgreSQL integration, SSE, multi-feed concurrency, and security defense layers.
 
 ---
 
 ## Roadmap
 
-- **Persistent Historical Storage**: Integrate PostgreSQL/SQLite database support to retain historical investigation records and enable long-term trend analysis.
-- **WebSocket Progress Streaming**: Add real-time Server-Sent Events (SSE) or WebSocket streaming for large batch queries (`/api/investigate/batch`), pushing results incrementally to the UI.
 - **Automated TAXII 2.1 Ingestion**: Add a background worker module to automatically ingest and index live STIX/TAXII 2.1 threat feeds from global CERTs.
 - **Role-Based Access Control (RBAC)**: Support multi-tenant enterprise SOC teams by implementing JWT authentication and tiered analyst roles.
+- **YARA Rule Engine**: Incorporate automated static analysis and dynamic YARA rule execution on uploaded batch samples.
 
 ---
 
