@@ -330,7 +330,8 @@ class MitreService {
                 }
                 fs.writeFileSync(this.cachePath, JSON.stringify({
                     timestamp: new Date().toISOString(),
-                    count: response.data.objects.length
+                    count: response.data.objects.length,
+                    objects: response.data.objects
                 }, null, 2));
                 console.log(`✅ MITRE ATT&CK STIX bundle synchronized successfully.`);
             }

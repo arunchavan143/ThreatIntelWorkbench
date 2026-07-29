@@ -2,12 +2,30 @@ const express = require('express');
 const router = express.Router();
 const CacheService = require('../services/cache.service');
 const { isKeyConfigured } = require('../middleware/auth');
+const db = require('../models');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const cacheStats = CacheService.getStats ? CacheService.getStats() : 'Cache not initialized';
+    
+    let dbStatus = 'disconnected';
+    let overallStatus = 'healthy';
+    
+    try {
+        if (db.sequelize) {
+            // Check DB connectivity with a 2 second timeout
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+            await Promise.race([db.sequelize.authenticate(), timeoutPromise]);
+            dbStatus = 'connected';
+        }
+    } catch (error) {
+        dbStatus = 'disconnected';
+        overallStatus = 'degraded';
+        console.error('Database health check failed:', error.message);
+    }
 
     res.json({
-        status: 'healthy',
+        status: overallStatus,
+        database: dbStatus,
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
         system: {

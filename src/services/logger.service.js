@@ -1,9 +1,20 @@
 
 const path = require('path');
 const db = require('../models');
+const winston = require('winston');
 
 class LoggerService {
     constructor() {
+        this.winstonLogger = winston.createLogger({
+            level: 'error',
+            format: winston.format.combine(
+                winston.format.timestamp(),
+                winston.format.json()
+            ),
+            transports: [
+                new winston.transports.File({ filename: path.join(__dirname, '../../logs/error-debug.log') })
+            ]
+        });
     }
 
     async logInvestigation(data) {
@@ -23,7 +34,10 @@ class LoggerService {
             }
         } catch (error) {
             console.error('Error writing investigation log to DB:', error);
-            require('fs').writeFileSync('error-debug.json', JSON.stringify({ message: error.message, stack: error.stack, error: error }, null, 2));
+            this.winstonLogger.error('DB Write Failure', { 
+                error: error.message, 
+                stack: error.stack 
+            });
         }
     }
 

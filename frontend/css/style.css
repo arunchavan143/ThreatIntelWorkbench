@@ -79,7 +79,7 @@ body {
     font-size: 26px; font-weight: 800;
     letter-spacing: -0.5px; margin-bottom: 4px;
     background: linear-gradient(135deg, var(--text), var(--text-dim));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
 .logo-main p { color: var(--text-dark); font-size: 14px; }
 
@@ -242,7 +242,7 @@ body {
 .topbar-left .logo {
     font-size: 14px; font-weight: 700;
     background: linear-gradient(135deg, var(--accent), var(--info));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
 .back-btn {
     padding: 4px 12px;
