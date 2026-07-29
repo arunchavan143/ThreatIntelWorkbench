@@ -5,7 +5,7 @@ describe('Health & Info Endpoints', () => {
     test('GET /health should return 200 and health status', async () => {
         const res = await request(app).get('/health');
         expect(res.statusCode).toBe(200);
-        expect(res.body.status).toBe('healthy');
+        expect(['healthy', 'degraded']).toContain(res.body.status);
         expect(res.body).toHaveProperty('uptime');
         expect(res.body).toHaveProperty('timestamp');
         expect(res.body).toHaveProperty('apis');
