@@ -1,6 +1,6 @@
 # 🛡️ Threat Intel Workbench Pro V4
 
-[![Version](https://img.shields.io/badge/Version-4.0.0--V4-F59E0B?style=flat-square)](https://github.com/arunchavan143/demo12)
+[![Version](https://img.shields.io/badge/Version-4.0.0--V4-F59E0B?style=flat-square)](https://github.com/arunchavan143/ThreatIntelWorkbench)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express.js-4.x-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -129,8 +129,8 @@ For a comprehensive technical dive including data flow sequence diagrams, databa
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/arunchavan143/demo12.git
-   cd threat-intel-workbench
+   git clone https://github.com/arunchavan143/ThreatIntelWorkbench.git
+   cd ThreatIntelWorkbench
    ```
 
 2. **Install dependencies**:
