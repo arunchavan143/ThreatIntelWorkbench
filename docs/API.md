@@ -371,14 +371,15 @@ data: {"error":"Failed to process indicator"}
 
 **Endpoint:** `GET /health`
 
-**Description:** Check system health and API key status.
+**Description:** Check system health, database connectivity, and API key status. `status` is derived from real-time checks — it is not hardcoded.
 
-**Response (200 OK):**
+**Response (200 OK) — database connected:**
 ```json
 {
   "status": "healthy",
   "uptime": 123.45,
   "timestamp": "2026-07-27T12:34:56.789Z",
+  "database": "connected",
   "apis": {
     "virustotal": true,
     "abuseipdb": true,
@@ -396,6 +397,45 @@ data: {"error":"Failed to process indicator"}
   }
 }
 ```
+
+**Response (200 OK) — database unreachable:**
+```json
+{
+  "status": "degraded",
+  "uptime": 123.45,
+  "timestamp": "2026-07-27T12:34:56.789Z",
+  "database": "disconnected",
+  "apis": { "...": "..." },
+  "cache": { "...": "..." }
+}
+```
+
+`database` is checked via `sequelize.authenticate()` with a 2-second timeout on every call to `/health`, so it always reflects live Postgres connectivity rather than an assumption. When the database is unreachable, `status` flips to `"degraded"` — the endpoint still returns `200 OK` (it reports health, it doesn't gate on it), so check the `status` and `database` fields rather than the HTTP status code alone. `apis.*` reflects whether each provider key is present and non-placeholder in `.env`, not whether the provider is currently reachable.
+
+---
+
+### 7a. MITRE ATT&CK STIX Sync
+
+**Endpoint:** `POST /api/mitre/sync`
+
+**Description:** Downloads the current MITRE ATT&CK Enterprise STIX 2.1 bundle from `raw.githubusercontent.com/mitre/cti` and caches it locally at `data/enterprise-attack-cache.json` (~40MB, gitignored — regenerated on demand, not committed). This populates the actor attribution engine (`getIntrusionSets()`) with live MITRE data instead of the built-in curated fallback list. Safe to call repeatedly; a sync already in progress is a no-op.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "MITRE ATT&CK STIX 2.1 dataset synchronization triggered successfully."
+}
+```
+
+**Response (500) — e.g. network unreachable:**
+```json
+{
+  "success": false,
+  "error": "<error message>"
+}
+```
+If sync fails, the app falls back to whatever cache already exists on disk (or the curated actor list if no cache exists yet) — investigation continues to work, it just won't reflect the latest MITRE dataset until sync succeeds.
 
 ---
 
