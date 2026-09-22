@@ -19,7 +19,7 @@ const AIChatWidget = {
                     <i class="fa-solid fa-wand-magic-sparkles" style="color:#c084fc;font-size:18px;"></i>
                     <div>
                         <h4 style="margin:0;color:#fff;font-size:15px;">AI SOC Assistant</h4>
-                        <span style="font-size:11px;color:#a855f7;">Groq Llama 3.3 70B</span>
+                        <span id="ai-chat-model-label" style="font-size:11px;color:#a855f7;">Loading model...</span>
                     </div>
                 </div>
                 <button id="ai-chat-close-btn" class="chat-close-btn"><i class="fa-solid fa-xmark"></i></button>
@@ -138,7 +138,12 @@ const AIChatWidget = {
             const response = await fetch('/api/investigate/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: this.messages.slice(-10), context })
+                body: JSON.stringify({
+                    messages: this.messages.slice(-10),
+                    context,
+                    // Include selected model — backend will validate it
+                    model: window.aiSelectedModel || undefined
+                })
             });
             const data = await response.json();
 
@@ -146,6 +151,14 @@ const AIChatWidget = {
             if (typingElem) typingElem.remove();
 
             if (data.success && data.reply) {
+                // Update model label if response includes model info
+                if (data.model) {
+                    const label = document.getElementById('ai-chat-model-label');
+                    if (label) {
+                        const modelName = (window.aiModels || []).find(m => m.id === data.model)?.name || data.model;
+                        label.textContent = modelName;
+                    }
+                }
                 this.appendBubble('ai', data.reply);
                 this.messages.push({ role: 'assistant', content: data.reply });
             } else {
@@ -160,57 +173,15 @@ const AIChatWidget = {
     }
 };
 
+
+// Initialize the chat widget and update model label once AI state loads
 document.addEventListener('DOMContentLoaded', () => {
     AIChatWidget.init();
-});
-
-// ============================================================
-// CHAT WIDGET TOGGLE
-// ============================================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    const widget = document.getElementById('chatWidget');
-    const toggleBtn = document.querySelector('.chat-toggle');
-    const closeBtn = widget ? widget.querySelector('.chat-close') : null;
-    
-    if (widget && toggleBtn) {
-        // Toggle widget visibility
-        toggleBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            widget.classList.toggle('collapsed');
-            if (!widget.classList.contains('collapsed')) {
-                const input = widget.querySelector('#chatInputField');
-                if (input) setTimeout(() => input.focus(), 300);
-            }
-        });
-        
-        // Close button
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                widget.style.display = 'none';
-                toggleBtn.style.display = 'flex';
-            });
+    // Wait briefly for initAIModelState() (in api.js) to complete then update label
+    setTimeout(() => {
+        if (window.aiSelectedModelName) {
+            const label = document.getElementById('ai-chat-model-label');
+            if (label) label.textContent = window.aiSelectedModelName;
         }
-        
-        // Initialize collapsed state
-        widget.classList.add('collapsed');
-    }
+    }, 500);
 });
-
-// Auto-expand widget when investigation results load
-function expandChatWidget() {
-    const widget = document.getElementById('chatWidget');
-    if (widget && widget.classList.contains('collapsed')) {
-        widget.classList.remove('collapsed');
-        const input = widget.querySelector('#chatInputField');
-        if (input) setTimeout(() => input.focus(), 300);
-    }
-}
-
-// Auto-hide widget when on search page
-function collapseChatWidget() {
-    const widget = document.getElementById('chatWidget');
-    if (widget && !widget.classList.contains('collapsed')) {
-        widget.classList.add('collapsed');
-    }
-}

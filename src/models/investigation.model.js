@@ -17,24 +17,28 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    ioc: {
+    indicator: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    type: {
+    indicator_type: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    provider_count: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     risk_score: {
       type: DataTypes.FLOAT,
       allowNull: true
     },
-    verdict: {
-      type: DataTypes.STRING,
+    confidence: {
+      type: DataTypes.FLOAT,
       allowNull: true
     },
-    sources: {
-      type: DataTypes.INTEGER,
+    verdict: {
+      type: DataTypes.STRING,
       allowNull: true
     },
     timestamp: {

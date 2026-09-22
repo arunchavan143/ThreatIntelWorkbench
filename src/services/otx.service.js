@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { withApiWrapper } = require('../utils/api-wrapper');
 
 class OTXService {
     constructor() {
@@ -53,89 +54,95 @@ class OTXService {
     }
 
     async investigateIP(ip) {
-        try {
-            const response = await axios.get(`${this.baseUrl}/indicators/IPv4/${ip}/general`, {
-                headers: { 'X-OTX-API-KEY': this.apiKey }
-            });
+        return withApiWrapper('otx', 'ip', ip, async () => {
+            try {
+                const response = await axios.get(`${this.baseUrl}/indicators/IPv4/${ip}/general`, {
+                    headers: { 'X-OTX-API-KEY': this.apiKey }
+                });
 
-            const data = response.data;
-            const meta = this._extractPulseMetadata(data.pulse_info);
+                const data = response.data;
+                const meta = this._extractPulseMetadata(data.pulse_info);
 
-            return {
-                success: true,
-                pulses: data.pulse_info?.count || 0,
-                tags: data.pulse_info?.tags || [],
-                activity: data.pulse_info?.participants || 0,
-                related_indicators: data.pulse_info?.related || [],
-                pulse_info: data.pulse_info || {},
-                ...meta,
-                provider: 'otx'
-            };
-        } catch (error) {
-            console.error('OTX Error:', error.message);
-            return {
-                success: false,
-                error: error.message,
-                provider: 'otx'
-            };
-        }
+                return {
+                    success: true,
+                    pulses: data.pulse_info?.count || 0,
+                    tags: data.pulse_info?.tags || [],
+                    activity: data.pulse_info?.participants || 0,
+                    related_indicators: data.pulse_info?.related || [],
+                    pulse_info: data.pulse_info || {},
+                    ...meta,
+                    provider: 'otx'
+                };
+            } catch (error) {
+                console.error('OTX Error:', error.message);
+                return {
+                    success: false,
+                    error: error.message,
+                    provider: 'otx'
+                };
+            }
+        });
     }
 
     async investigateDomain(domain) {
-        try {
-            const response = await axios.get(`${this.baseUrl}/indicators/domain/${domain}/general`, {
-                headers: { 'X-OTX-API-KEY': this.apiKey }
-            });
+        return withApiWrapper('otx', 'domain', domain, async () => {
+            try {
+                const response = await axios.get(`${this.baseUrl}/indicators/domain/${domain}/general`, {
+                    headers: { 'X-OTX-API-KEY': this.apiKey }
+                });
 
-            const data = response.data;
-            const meta = this._extractPulseMetadata(data.pulse_info);
+                const data = response.data;
+                const meta = this._extractPulseMetadata(data.pulse_info);
 
-            return {
-                success: true,
-                pulses: data.pulse_info?.count || 0,
-                tags: data.pulse_info?.tags || [],
-                related_indicators: data.pulse_info?.related || [],
-                pulse_info: data.pulse_info || {},
-                ...meta,
-                provider: 'otx'
-            };
-        } catch (error) {
-            console.error('OTX Domain Error:', error.message);
-            return {
-                success: false,
-                error: error.message,
-                provider: 'otx'
-            };
-        }
+                return {
+                    success: true,
+                    pulses: data.pulse_info?.count || 0,
+                    tags: data.pulse_info?.tags || [],
+                    related_indicators: data.pulse_info?.related || [],
+                    pulse_info: data.pulse_info || {},
+                    ...meta,
+                    provider: 'otx'
+                };
+            } catch (error) {
+                console.error('OTX Domain Error:', error.message);
+                return {
+                    success: false,
+                    error: error.message,
+                    provider: 'otx'
+                };
+            }
+        });
     }
 
     async investigateHash(hash) {
-        try {
-            const response = await axios.get(`${this.baseUrl}/indicators/file/${hash}/general`, {
-                headers: { 'X-OTX-API-KEY': this.apiKey }
-            });
+        return withApiWrapper('otx', 'hash', hash, async () => {
+            try {
+                const response = await axios.get(`${this.baseUrl}/indicators/file/${hash}/general`, {
+                    headers: { 'X-OTX-API-KEY': this.apiKey }
+                });
 
-            const data = response.data;
-            const meta = this._extractPulseMetadata(data.pulse_info);
+                const data = response.data;
+                const meta = this._extractPulseMetadata(data.pulse_info);
 
-            return {
-                success: true,
-                pulses: data.pulse_info?.count || 0,
-                tags: data.pulse_info?.tags || [],
-                related_indicators: data.pulse_info?.related || [],
-                pulse_info: data.pulse_info || {},
-                file_type: data.file_class || 'unknown',
-                ...meta,
-                provider: 'otx'
-            };
-        } catch (error) {
-            console.error('OTX Hash Error:', error.message);
-            return {
-                success: false,
-                error: error.message,
-                provider: 'otx'
-            };
-        }
+                return {
+                    success: true,
+                    pulses: data.pulse_info?.count || 0,
+                    tags: data.pulse_info?.tags || [],
+                    related_indicators: data.pulse_info?.related || [],
+                    pulse_info: data.pulse_info || {},
+                    file_type: data.file_class || 'unknown',
+                    ...meta,
+                    provider: 'otx'
+                };
+            } catch (error) {
+                console.error('OTX Hash Error:', error.message);
+                return {
+                    success: false,
+                    error: error.message,
+                    provider: 'otx'
+                };
+            }
+        });
     }
 }
 

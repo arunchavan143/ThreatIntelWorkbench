@@ -22,11 +22,12 @@ class LoggerService {
             if (db.Investigation) {
                 await db.Investigation.create({
                     investigation_id: data.investigation_id || `inv_${Date.now()}`,
-                    ioc: data.ioc,
-                    type: data.type,
+                    indicator: data.ioc,
+                    indicator_type: data.type,
                     risk_score: data.risk_score,
+                    confidence: data.confidence || 0,
                     verdict: data.verdict,
-                    sources: data.sources,
+                    provider_count: data.sources,
                     timestamp: data.timestamp || new Date()
                 });
             } else {
@@ -79,6 +80,49 @@ class LoggerService {
         } catch (error) {
             console.error('Error reading async investigation history from DB:', error.message);
             return [];
+        }
+    }
+
+    async logAiChat(conversationId, messages, summary = null) {
+        try {
+            if (db.AiChat) {
+                await db.AiChat.create({ conversation_id: conversationId, messages, summary });
+            }
+        } catch (error) {
+            this.winstonLogger.error('AiChat DB Write Failure', { error: error.message });
+        }
+    }
+
+    async logReport(investigationId, filename, type) {
+        try {
+            if (db.Report) {
+                await db.Report.create({ investigation_id: investigationId, filename, type });
+            }
+        } catch (error) {
+            this.winstonLogger.error('Report DB Write Failure', { error: error.message });
+        }
+    }
+
+    async updateApiUsage(provider, count = 1) {
+        try {
+            if (db.ApiUsage) {
+                const [usage] = await db.ApiUsage.findOrCreate({ where: { provider } });
+                usage.daily_requests += count;
+                usage.last_request = new Date();
+                await usage.save();
+            }
+        } catch (error) {
+            this.winstonLogger.error('ApiUsage DB Write Failure', { error: error.message });
+        }
+    }
+
+    async logAudit(eventType, details = {}) {
+        try {
+            if (db.AuditLog) {
+                await db.AuditLog.create({ event_type: eventType, details });
+            }
+        } catch (error) {
+            this.winstonLogger.error('AuditLog DB Write Failure', { error: error.message });
         }
     }
 }

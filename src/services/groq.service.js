@@ -3,19 +3,67 @@ const axios = require('axios');
 const { isKeyConfigured } = require('../middleware/auth');
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+
+// ============================================================
+// CENTRALIZED MODEL REGISTRY
+// Change models here or via GROQ_MODEL environment variable.
+// ============================================================
+const SUPPORTED_MODELS = [
+    {
+        id: 'openai/gpt-oss-120b',
+        name: 'GPT-OSS 120B',
+        provider: 'Groq',
+        enabled: true
+    },
+    {
+        id: 'openai/gpt-oss-20b',
+        name: 'GPT-OSS 20B',
+        provider: 'Groq',
+        enabled: true
+    },
+    {
+        id: 'qwen/qwen3.8-27b',
+        name: 'Qwen 3.8 27B',
+        provider: 'Groq',
+        enabled: true
+    }
+];
+
+// Default model: prefer env override, fall back to first enabled model
+const _envModel = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+
+function getDefaultModel() {
+    const found = SUPPORTED_MODELS.find(m => m.enabled && m.id === _envModel);
+    return found ? found.id : (SUPPORTED_MODELS.find(m => m.enabled)?.id || 'openai/gpt-oss-120b');
+}
+
+function getSupportedModels() {
+    return SUPPORTED_MODELS.filter(m => m.enabled);
+}
+
+/**
+ * Validate a client-supplied model ID against the backend allowlist.
+ * Returns the validated model ID string, or null if not found/enabled.
+ */
+function validateModel(modelId) {
+    if (!modelId) return null;
+    const found = SUPPORTED_MODELS.find(m => m.enabled && m.id === modelId);
+    return found ? found.id : null;
+}
 
 function isEnabled() {
     return isKeyConfigured('GROQ_API_KEY');
 }
 
-// Helper to make safe Groq API requests with fallback
+// Core Groq API call — accepts model via options.model; falls back to default
 async function callGroq(messages, options = {}) {
     if (!isEnabled()) return null;
+    // Use caller-specified model (pre-validated) or the configured default
+    const model = options.model || getDefaultModel();
     try {
         const payload = {
-            model: MODEL,
-            messages: messages,
+            model,
+            messages,
             max_tokens: options.max_tokens || 550,
             temperature: options.temperature !== undefined ? options.temperature : 0.3
         };
@@ -25,13 +73,22 @@ async function callGroq(messages, options = {}) {
         const response = await axios.post(GROQ_API_URL, payload, {
             timeout: options.timeout || 14000,
             headers: {
+                // GROQ_API_KEY is backend-only — never sent to frontend
                 Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
         return response.data?.choices?.[0]?.message?.content?.trim() || null;
     } catch (error) {
-        console.error('Groq API Error:', error.response?.data?.error?.message || error.message);
+        const status = error.response?.status;
+        const msg = error.response?.data?.error?.message || error.message;
+        // Structured log — model and status only, never the API key
+        console.error(`Groq request failed\n  model=${model}\n  status=${status || 'network_error'}\n  error=${msg}`);
+        if (status === 429) {
+            console.warn(`Groq rate limit (429) for model=${model}`);
+        } else if (status === 401 || status === 403) {
+            console.error(`Groq auth error (${status}) — check GROQ_API_KEY`);
+        }
         return null;
     }
 }
@@ -110,7 +167,7 @@ async function generateAnalystSummary(iocType, iocValue, assessment) {
         try {
             parsedJson = JSON.parse(rawContent);
         } catch (e) {
-            return { text: rawContent, model: MODEL, provider: 'groq' };
+            return { text: rawContent, model: getDefaultModel(), provider: 'groq' };
         }
 
         return {
@@ -127,7 +184,7 @@ async function generateAnalystSummary(iocType, iocValue, assessment) {
             ],
             slack_alert: parsedJson.slack_alert || `🚨 THREAT ALERT: ${assessment.verdict} ${iocType} (${iocValue}) - Score: ${assessment.score}/100`,
             campaign_tracking: parsedJson.campaign_tracking || 'No recurring campaign overlaps identified in current telemetry.',
-            model: MODEL,
+            model: getDefaultModel(),
             provider: 'groq'
         };
     } catch (error) {
@@ -138,10 +195,13 @@ async function generateAnalystSummary(iocType, iocValue, assessment) {
 /**
  * Priority 4: AI Chat Assistant (Conversational Q&A on current investigation & history)
  */
-async function chat(messages = [], context = {}) {
+async function chat(messages = [], context = {}, model) {
     if (!isEnabled()) {
         return { error: true, message: 'Groq API key not configured. Add GROQ_API_KEY to environment.' };
     }
+
+    // Use caller-specified (pre-validated) model or the configured default
+    const selectedModel = model || getDefaultModel();
 
     const systemPrompt = `You are an expert AI SOC Assistant inside the Threat Intel Workbench.
 You help analysts investigate indicators of compromise (IOCs), explain MITRE ATT&CK TTPs, interpret risk scores, and suggest containment strategies.
@@ -159,12 +219,12 @@ Be helpful, concise, technically rigorous, and direct. When asked why a score is
         ...messages.slice(-8) // keep last 8 messages for context window efficiency
     ];
 
-    const reply = await callGroq(fullMessages, { max_tokens: 450, temperature: 0.4 });
+    const reply = await callGroq(fullMessages, { model: selectedModel, max_tokens: 450, temperature: 0.4 });
     if (!reply) {
         return { error: true, message: 'AI Chat service currently unavailable.' };
     }
 
-    return { success: true, reply, model: MODEL };
+    return { success: true, reply, model: selectedModel };
 }
 
 /**
@@ -202,7 +262,7 @@ async function generateExportReport(data = {}, format = 'executive') {
         return { error: true, message: 'Failed to generate export report.' };
     }
 
-    return { success: true, format, report: content, model: MODEL };
+    return { success: true, format, report: content, model: getDefaultModel() };
 }
 
 /**
@@ -244,10 +304,10 @@ ${historyItems}`;
             pattern_summary: parsed.pattern_summary || 'Analyzed batch indicators.',
             infrastructure_correlation: Array.isArray(parsed.infrastructure_correlation) ? parsed.infrastructure_correlation : [],
             campaign_tracking: parsed.campaign_tracking || 'No specific historical campaign correlations identified.',
-            model: MODEL
+            model: getDefaultModel()
         };
     } catch (e) {
-        return { pattern_summary: raw, infrastructure_correlation: [], campaign_tracking: '', model: MODEL };
+        return { pattern_summary: raw, infrastructure_correlation: [], campaign_tracking: '', model: getDefaultModel() };
     }
 }
 
@@ -292,10 +352,10 @@ Respond strictly as valid JSON:
             query,
             answer: parsed.answer || 'Found relevant historical investigations.',
             matching_iocs: matchingIocs,
-            model: MODEL
+            model: getDefaultModel()
         };
     } catch (e) {
-        return { success: true, query, answer: raw, matching_iocs: history.slice(0, 5), model: MODEL };
+        return { success: true, query, answer: raw, matching_iocs: history.slice(0, 5), model: getDefaultModel() };
     }
 }
 
@@ -305,5 +365,8 @@ module.exports = {
     generateExportReport,
     analyzeBatch,
     searchNaturalLanguage,
-    isEnabled
+    isEnabled,
+    getDefaultModel,
+    getSupportedModels,
+    validateModel
 };
