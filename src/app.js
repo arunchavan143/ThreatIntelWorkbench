@@ -29,6 +29,7 @@ const healthRoutes = require('./routes/health.routes');
 const investigateRoutes = require('./routes/investigate.routes');
 const exportRoutes = require('./routes/export.routes');
 const historyRoutes = require('./routes/history.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 // ============================================================
 // SECURITY & MIDDLEWARE SETUP
@@ -69,6 +70,7 @@ app.get('/api', (req, res) => {
 
 // Modular Routes
 app.use('/health', healthRoutes);
+app.use('/api/ai', aiRoutes);            // Public: model list — no API key required
 app.use('/api/investigate', validateApiKey, investigateRoutes);
 app.use('/api/history', validateApiKey, historyRoutes);
 app.use('/api/export', validateApiKey, exportRoutes);
@@ -109,24 +111,55 @@ module.exports = app;
 // START SERVER (When executed directly)
 // ============================================================
 if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log('========================================');
-        console.log('🛡️  Threat Intel Workbench Pro');
-        console.log('========================================');
-        console.log(`🔗 Server:      http://localhost:${PORT}`);
-        console.log(`📡 API:         http://localhost:${PORT}/api`);
-        console.log(`🏥 Health:      http://localhost:${PORT}/health`);
-        console.log(`🌐 Frontend:    http://localhost:${PORT}`);
-        console.log('========================================');
-        console.log('📌  API Status:');
-        console.log(`   ✅ VirusTotal:  ${isKeyConfigured('VIRUSTOTAL_API_KEY') ? '✅' : '❌'}`);
-        console.log(`   ✅ AbuseIPDB:   ${isKeyConfigured('ABUSEIPDB_API_KEY') ? '✅' : '❌'}`);
-        console.log(`   ✅ Shodan:      ${isKeyConfigured('SHODAN_API_KEY') ? '✅' : '❌'}`);
-        console.log(`   ✅ OTX:         ${isKeyConfigured('OTX_API_KEY') ? '✅' : '❌'}`);
-        console.log(`   ✅ URLScan:     ${isKeyConfigured('URLSCAN_API_KEY') ? '✅' : '❌'}`);
-        console.log(`   ✅ Groq:        ${isKeyConfigured('GROQ_API_KEY') ? '✅' : '❌'}`);
-        console.log('========================================');
-        console.log('💡  Press Ctrl+C to stop');
-        console.log('========================================');
-    });
+    (async () => {
+        let dbStatus = '✗ PostgreSQL Connection Failed';
+        let dbErrorDetail = '';
+        let dbConfigStr = '';
+        
+        try {
+            const db = require('./models');
+            if (db.sequelize) {
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('timeout')), 3000);
+                });
+                await Promise.race([db.sequelize.authenticate(), timeoutPromise]);
+                dbStatus = '✓ PostgreSQL Connected';
+                dbConfigStr = `
+    Host: ${db.sequelize.config.host}
+    Database: ${db.sequelize.config.database}
+    User: ${db.sequelize.config.username}`;
+            }
+        } catch (error) {
+            dbErrorDetail = `
+    Error: ${error.message}
+    Reason: Could not connect to PostgreSQL or timed out.
+    Disabled Features: Investigation history, AI chat history, Report logging.`;
+        }
+
+        app.listen(PORT, () => {
+            console.log('\n=========================================================');
+            console.log(' ThreatIntelWorkbench Backend v4');
+            console.log('=========================================================\n');
+            
+            console.log(dbStatus);
+            if (dbConfigStr) console.log(dbConfigStr);
+            if (dbErrorDetail) console.log(dbErrorDetail);
+            
+            console.log('');
+            console.log(`✓ AI Provider (Groq):    ${isKeyConfigured('GROQ_API_KEY') ? 'Configured' : 'Missing'}`);
+            if (isKeyConfigured('GROQ_API_KEY')) {
+                const { getDefaultModel } = require('./services/groq.service');
+                console.log(`  Default AI Model:      ${getDefaultModel()}`);
+            }
+            console.log(`✓ VirusTotal API:        ${isKeyConfigured('VIRUSTOTAL_API_KEY') ? 'Configured' : 'Missing'}`);
+            console.log(`✓ AbuseIPDB API:         ${isKeyConfigured('ABUSEIPDB_API_KEY') ? 'Configured' : 'Missing'}`);
+            console.log(`✓ URLScan API:           ${isKeyConfigured('URLSCAN_API_KEY') ? 'Configured' : 'Missing'}`);
+            console.log(`✓ OTX API:               ${isKeyConfigured('OTX_API_KEY') ? 'Configured' : 'Missing'}`);
+            console.log(`✓ Shodan API:            ${isKeyConfigured('SHODAN_API_KEY') ? 'Configured' : 'Missing'}`);
+            
+            console.log('\n✓ Server Started');
+            console.log(`    http://localhost:${PORT}`);
+            console.log('\n=========================================================\n');
+        });
+    })();
 }

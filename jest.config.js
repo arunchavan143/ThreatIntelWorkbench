@@ -3,5 +3,6 @@ module.exports = {
   testMatch: ['**/tests/**/*.test.js'],
   testTimeout: 10000,
   verbose: true,
-  clearMocks: true
+  clearMocks: true,
+  setupFilesAfterEnv: ['./tests/setup.js']
 };

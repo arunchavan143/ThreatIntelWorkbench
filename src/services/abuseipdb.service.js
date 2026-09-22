@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { withApiWrapper } = require('../utils/api-wrapper');
 
 class AbuseIPDBService {
     constructor() {
@@ -7,47 +8,49 @@ class AbuseIPDBService {
     }
 
     async investigateIP(ip) {
-        try {
-            const response = await axios.get(`${this.baseUrl}/check`, {
-                params: {
-                    ipAddress: ip,
-                    maxAgeInDays: 90,
-                    verbose: true
-                },
-                headers: {
-                    'Key': this.apiKey,
-                    'Accept': 'application/json'
-                }
-            });
+        return withApiWrapper('abuseipdb', 'ip', ip, async () => {
+            try {
+                const response = await axios.get(`${this.baseUrl}/check`, {
+                    params: {
+                        ipAddress: ip,
+                        maxAgeInDays: 90,
+                        verbose: true
+                    },
+                    headers: {
+                        'Key': this.apiKey,
+                        'Accept': 'application/json'
+                    }
+                });
 
-            const data = response.data.data;
+                const data = response.data.data;
 
-            return {
-                success: true,
-                abuse_score: data.abuseConfidenceScore || 0,
-                country: data.countryCode,
-                country_name: data.countryName,
-                isp: data.isp,
-                domain: data.domain,
-                usage_type: data.usageType,
-                total_reports: data.totalReports || 0,
-                last_reported: data.lastReportedAt,
-                reports: data.reports ? data.reports.slice(0, 5).map(r => ({
-                    category: r.categories.join(', '),
-                    count: 1,
-                    timestamp: r.reportedAt
-                })) : [],
-                confidence: 100 - (data.abuseConfidenceScore || 0),
-                provider: 'abuseipdb'
-            };
-        } catch (error) {
-            console.error('AbuseIPDB Error:', error.message);
-            return {
-                success: false,
-                error: error.message,
-                provider: 'abuseipdb'
-            };
-        }
+                return {
+                    success: true,
+                    abuse_score: data.abuseConfidenceScore || 0,
+                    country: data.countryCode,
+                    country_name: data.countryName,
+                    isp: data.isp,
+                    domain: data.domain,
+                    usage_type: data.usageType,
+                    total_reports: data.totalReports || 0,
+                    last_reported: data.lastReportedAt,
+                    reports: data.reports ? data.reports.slice(0, 5).map(r => ({
+                        category: r.categories.join(', '),
+                        count: 1,
+                        timestamp: r.reportedAt
+                    })) : [],
+                    confidence: 100 - (data.abuseConfidenceScore || 0),
+                    provider: 'abuseipdb'
+                };
+            } catch (error) {
+                console.error('AbuseIPDB Error:', error.message);
+                return {
+                    success: false,
+                    error: error.message,
+                    provider: 'abuseipdb'
+                };
+            }
+        });
     }
 }
 

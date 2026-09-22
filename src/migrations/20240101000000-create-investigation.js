@@ -12,24 +12,28 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
-      ioc: {
+      indicator: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      type: {
+      indicator_type: {
         type: Sequelize.STRING,
         allowNull: false
+      },
+      provider_count: {
+        type: Sequelize.INTEGER,
+        allowNull: true
       },
       risk_score: {
         type: Sequelize.FLOAT,
         allowNull: true
       },
-      verdict: {
-        type: Sequelize.STRING,
+      confidence: {
+        type: Sequelize.FLOAT,
         allowNull: true
       },
-      sources: {
-        type: Sequelize.INTEGER,
+      verdict: {
+        type: Sequelize.STRING,
         allowNull: true
       },
       timestamp: {
@@ -48,6 +52,9 @@ module.exports = {
         defaultValue: Sequelize.NOW
       }
     });
+
+    await queryInterface.addIndex('investigations', ['indicator']);
+    await queryInterface.addIndex('investigations', ['timestamp']);
   },
   down: async (queryInterface) => {
     await queryInterface.dropTable('investigations');

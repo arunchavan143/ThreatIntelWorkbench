@@ -441,11 +441,27 @@ router.post('/batch', validateBatch, async (req, res, next) => {
 // ============================================================
 router.post('/chat', async (req, res, next) => {
     try {
-        const { messages, context } = req.body;
+        const { messages, context, model: requestedModel } = req.body;
         if (!Array.isArray(messages) || !messages.length) {
             return res.status(400).json({ success: false, error: 'Messages array required for AI Chat' });
         }
-        const chatResponse = await GroqService.chat(messages, context || {});
+
+        // Validate requested model against backend allowlist — never trust arbitrary client-supplied IDs
+        let validatedModel = null;
+        if (requestedModel) {
+            validatedModel = GroqService.validateModel(requestedModel);
+            if (!validatedModel) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Unsupported AI model',
+                    requested_model: requestedModel,
+                    available_models: GroqService.getSupportedModels().map(m => m.id)
+                });
+            }
+        }
+        // validatedModel is null when not supplied — chat() will use default
+
+        const chatResponse = await GroqService.chat(messages, context || {}, validatedModel);
         return res.json(chatResponse);
     } catch (error) {
         next(error);
