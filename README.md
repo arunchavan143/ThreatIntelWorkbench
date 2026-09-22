@@ -5,16 +5,43 @@
 [![Express](https://img.shields.io/badge/Express.js-4.x-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE_ATT&CK-STIX_2.1-EF4444?style=flat-square&logo=mitre&logoColor=white)](https://attack.mitre.org/)
-[![AI Powered](https://img.shields.io/badge/AI_Powered-Groq_Llama_3.3-8B5CF6?style=flat-square)](https://groq.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.x-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org/)
+[![AI Powered](https://img.shields.io/badge/AI_Powered-Groq_GPT--OSS_120B-8B5CF6?style=flat-square)](https://groq.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org/)
 
 ---
 
 ## Project Overview
 
-**Threat Intel Workbench Pro V4** is a high-performance, multi-source Security Operations Center (SOC) investigation platform designed for cybersecurity analysts, incident responders, and threat hunters. It correlates real-time telemetry across **15+ integrated threat intelligence feeds**, maps observed behaviors to the **MITRE ATT&CK® STIX 2.1 framework**, attributes threat campaigns to known **Advanced Persistent Threat (APT) profiles**, and synthesizes natural-language executive briefings powered by **Groq AI (`llama-3.3-70b-versatile`)**.
+**Threat Intel Workbench Pro V4** is a high-performance, multi-source Security Operations Center (SOC) investigation platform designed for cybersecurity analysts, incident responders, and threat hunters. It correlates real-time telemetry across **15+ integrated threat intelligence feeds**, maps observed behaviors to the **MITRE ATT&CK® STIX 2.1 framework**, attributes threat campaigns to known **Advanced Persistent Threat (APT) profiles**, and synthesizes natural-language executive briefings powered by **Groq AI with centralized model selection (default: `openai/gpt-oss-120b`)**.
 
 With **Version 4.0**, the platform now features a robust **PostgreSQL** database backend for persistent historical storage and **Server-Sent Events (SSE)** for real-time progress streaming during large batch investigations.
+
+### AI Model Configuration
+
+The AI layer uses a centralized backend model registry in `src/services/groq.service.js`.
+
+Supported models currently registered by the application:
+
+| Model ID | Display Name | Provider | Status |
+| :--- | :--- | :--- | :---: |
+| `openai/gpt-oss-120b` | GPT-OSS 120B | Groq | ✅ |
+| `openai/gpt-oss-20b` | GPT-OSS 20B | Groq | ✅ |
+| `qwen/qwen3.8-27b` | Qwen 3.8 27B | Groq | ✅ |
+
+The default model is:
+
+```text
+openai/gpt-oss-120b
+```
+
+It can be overridden through:
+
+```env
+GROQ_MODEL=openai/gpt-oss-120b
+```
+
+The backend validates client-supplied model IDs against the allowlist before sending requests to Groq. The Groq API key remains server-side and is never exposed to the frontend.
+
 
 ---
 
@@ -23,7 +50,7 @@ With **Version 4.0**, the platform now features a robust **PostgreSQL** database
 - **🌐 Multi-Source Indicator Investigation**: Seamlessly query IP addresses, domain names, file hashes (MD5/SHA1/SHA256), URLs, and batch indicator lists from a unified, high-contrast dark glassmorphism interface.
 - **🐘 PostgreSQL Persistent Storage (New in V4)**: Robust relational database backend to automatically retain all historical investigation records for long-term trend analysis and instantaneous querying.
 - **⚡ Real-Time SSE Progress Streaming (New in V4)**: Real-time Server-Sent Events (SSE) push live scanning progress directly to the UI for massive batch indicator investigations without timeout risks.
-- **🧠 Full AI-Powered Intelligence Suite (Groq `llama-3.3-70b-versatile`)**:
+- **🧠 Full AI-Powered Intelligence Suite (Groq AI; default model: `openai/gpt-oss-120b`)**:
   - **AI Conversational Chat Assistant (`Priority 4`)**: Interactive floating chat widget allowing natural language questions ("Why is this score 75?", "Explain this MITRE technique", "What containment steps should we take?") backed by real-time investigation context and quick-chip prompts.
   - **AI Smart Report & Alert Generator (`Priority 5, 7 & 8`)**: One-click multi-format synthesis inside a glassmorphic modal: C-suite **Executive Summary**, exhaustive **Technical Report**, high-urgency **Slack/Email Alert Templates (`Priority 7`)**, and chronological **Incident Response Timelines (`Priority 8`)**. Includes instant "Copy to Clipboard" and Markdown download.
   - **AI Bulk IOC Analysis & Campaign Tracking (`Priority 6 & 9`)**: Pattern synthesis across batch indicators (`/api/investigate/batch`), ASN/infrastructure correlations, and APT campaign tracking card rendered directly at the top of batch investigations.
@@ -154,11 +181,16 @@ For a comprehensive technical dive including data flow sequence diagrams, databa
    DB_PASSWORD=your_password
 
    GROQ_API_KEY=your_groq_api_key_here
+   GROQ_MODEL=openai/gpt-oss-120b
+
    VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
    ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
    SHODAN_API_KEY=your_shodan_api_key_here
    OTX_API_KEY=your_alienvault_otx_api_key_here
    URLSCAN_API_KEY=your_urlscan_api_key_here
+
+   # Optional API authentication for protected /api routes
+   WORKBENCH_API_KEY=
    ```
 
 4. **Run Migrations**:
@@ -203,6 +235,16 @@ Threat Intel Workbench Pro V4 natively uses PostgreSQL for persistent storage of
 ### Option 1: Using Docker (Recommended)
 
 The included `docker-compose.yml` will start a PostgreSQL container automatically alongside the app:
+
+The current Compose configuration uses:
+
+| Setting | Value |
+| :--- | :--- |
+| Database | `threat_intel` |
+| User | `threat_user` |
+| Password | `threat_pass_2024` |
+| Host Port | `5432` |
+| Image | `postgres:15-alpine` |
 
 ```bash
 # Start the database and application together
@@ -273,71 +315,306 @@ docker-compose ps
 
 ```text
 threat-intel-workbench-backend/
-├── Dockerfile               # Multi-stage production Alpine build
-├── docker-compose.yml       # Container orchestration & PostgreSQL volume mapping
-├── .dockerignore            # Build context exclusions
-├── .env.example             # Template for API keys and configuration
-├── package.json             # Project dependencies and script definitions
-├── README.md                # Project overview and portfolio documentation
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
+├── .env.example
+├── package.json
+├── README.md
 ├── docs/
-│   ├── ARCHITECTURE.md      # Detailed system architecture specification
-│   ├── API.md               # REST API endpoints and payload examples
-│   ├── USER_GUIDE.md        # Comprehensive analyst operational manual
-│   └── screenshots/         # Embedded application previews
-├── frontend/                # Client-Side SPA Presentation Layer
-│   ├── index.html           # Single-page application shell
+│   ├── ARCHITECTURE.md
+│   ├── API.md
+│   ├── USER_GUIDE.md
+│   └── screenshots/
+├── frontend/                     # Client-side SPA presentation layer
+│   ├── index.html
 │   ├── css/
-│   │   └── style.css        # Dark glassmorphism theme and CSS Grid styles
+│   │   └── style.css
 │   └── js/
-│       ├── app.js           # Core initialization, search bindings, and AI history search
-│       ├── api.js           # Axios HTTP client handling standard queries and SSE streaming
-│       ├── ui.js            # UI DOM controllers, status indicators, and overview renderers
-│       ├── utils.js         # Security escaping (`safeString`), `parseMarkdown`, `sanitizeForAI`
-│       ├── chat-widget.js   # Floating AI Conversational Assistant widget (`Priority 4`)
+│       ├── app.js                # Core application/search/history UI
+│       ├── api.js                # Fetch-based API client + AI model state
+│       ├── ui.js                 # UI rendering and status controls
+│       ├── utils.js              # safeString, parseMarkdown, sanitizeForAI
+│       ├── chat-widget.js        # Floating AI SOC Assistant
 │       └── tabs/
-│           ├── intelligence.js  # Threat Actor, MITRE, Provider, and IOC UI renderer
-│           ├── evidence.js      # Raw JSON inspector and clipboard utilities
-│           ├── relationships.js # Interactive network visualization graph
-│           └── export.js        # Executive PDF report, CSV export, and AI Report Modal (`Priority 5, 7, 8`)
-├── src/                     # Node.js / Express Backend Layer
-│   ├── app.js               # Express application setup, security headers, and route mounting
+│           ├── intelligence.js
+│           ├── evidence.js
+│           ├── relationships.js
+│           └── export.js
+├── src/                          # Node.js / Express backend layer
+│   ├── app.js                    # Express setup, security middleware, routes
+│   ├── config/
 │   ├── models/
-│   │   ├── index.js         # Sequelize database configuration and models loader
-│   │   └── investigation.js # Investigation record Sequelize Model Schema
-│   ├── migrations/          # Sequelize Postgres migration scripts
-│   ├── seeders/             # Sequelize Postgres database seeders
+│   │   ├── index.js
+│   │   └── investigation.js
+│   ├── migrations/
+│   ├── seeders/
 │   ├── middleware/
-│   │   ├── logger.js        # Request logging & console instrumentation
-│   │   ├── rate-limit.js    # IP-based sliding window rate limiter (`100 req/15min`)
-│   │   ├── auth.js          # API key validation (`x-api-key`, `Bearer`) & provider status
-│   │   ├── error-handler.js # Centralized JSON error dispatcher
-│   │   └── validator.js     # Joi validation schemas across IP/Domain/Hash/URL/Batch
+│   │   ├── logger.js
+│   │   ├── rate-limit.js
+│   │   ├── auth.js
+│   │   ├── error-handler.js
+│   │   └── validator.js
 │   ├── routes/
-│   │   ├── health.routes.js      # /health status and /api system metadata endpoints
-│   │   ├── investigate.routes.js # /api/investigate endpoints (IP/Domain/Hash/URL/Batch/Chat/SSE)
-│   │   ├── export.routes.js      # /api/export/ai-brief multi-format report generator
-│   │   └── history.routes.js     # /api/history natural language search (`Priority 10`)
+│   │   ├── health.routes.js
+│   │   ├── ai.routes.js
+│   │   ├── investigate.routes.js
+│   │   ├── export.routes.js
+│   │   └── history.routes.js
 │   ├── services/
-│   │   ├── actor.service.js      # O(1) Threat Actor APT profile index & correlation
-│   │   ├── mitre.service.js      # MITRE ATT&CK STIX 2.1 mapping database
-│   │   ├── groq.service.js       # Groq AI LLM (`llama-3.3-70b-versatile`) integration
-│   │   ├── virustotal.service.js # VirusTotal API v3 integration
-│   │   ├── abuseipdb.service.js  # AbuseIPDB API v2 integration
-│   │   ├── otx.service.js        # AlienVault OTX indicator and pulse integration
-│   │   ├── shodan.service.js     # Shodan open port and banner integration
-│   │   ├── urlscan.service.js    # URLScan domain/url telemetry integration
-│   │   ├── logger.service.js     # Database interaction service for history storage
-│   │   └── cache.service.js      # Node-Cache in-memory TTL controller
+│   │   ├── actor.service.js
+│   │   ├── mitre.service.js
+│   │   ├── groq.service.js
+│   │   ├── virustotal.service.js
+│   │   ├── abuseipdb.service.js
+│   │   ├── otx.service.js
+│   │   ├── shodan.service.js
+│   │   ├── urlscan.service.js
+│   │   ├── geolocation.service.js
+│   │   ├── asn.service.js
+│   │   ├── whois.service.js
+│   │   ├── dns.service.js
+│   │   ├── ssl.service.js
+│   │   ├── certificate-transparency.service.js
+│   │   ├── subdomain.service.js
+│   │   ├── logger.service.js
+│   │   ├── cache.service.js
+│   │   └── sse.service.js
 │   └── utils/
-│       └── risk-calculator.js    # Quantitative risk scoring and verdict engine
-└── tests/                   # Comprehensive Jest Automated Testing Suite (`32 tests across 6 suites`)
-    ├── auth.test.js              # API key authentication & middleware pass-through tests
-    ├── health.test.js            # Health check & system metadata route validation
-    ├── investigate.test.js       # End-to-end investigation endpoints & batch processing
-    ├── risk-calculator.test.js   # Risk math, severity thresholds & confidence scoring
-    ├── validator.test.js         # Input validation across IPv4/IPv6, domains, hashes, URLs
-    └── ai-features.test.js       # AI Chat, AI Briefing/Alert export, and AI History Search
+│       └── risk-calculator.js
+└── tests/
+    ├── auth.test.js
+    ├── health.test.js
+    ├── investigate.test.js
+    ├── risk-calculator.test.js
+    ├── validator.test.js
+    └── ai-features.test.js
 ```
+
+---
+
+## API Highlights
+
+### Core Investigation Routes
+
+```text
+GET  /api/investigate/ip/:ip
+GET  /api/investigate/domain/:domain
+GET  /api/investigate/hash/:hash
+GET  /api/investigate/url?url=...
+POST /api/investigate/batch
+POST /api/investigate/batch-stream
+POST /api/investigate/chat
+```
+
+### AI Metadata Routes
+
+```text
+GET /api/ai/models
+GET /api/ai/status
+```
+
+`/api/ai/models` returns the supported model allowlist and configured default. `/api/ai/status` reports Groq configuration status without exposing the API key.
+
+### History Routes
+
+```text
+GET  /api/history
+GET  /api/history/:id
+POST /api/history/ai-search
+```
+
+### Export Routes
+
+```text
+POST /api/export/json
+POST /api/export/csv
+POST /api/export/ai-brief
+```
+
+### MITRE Sync
+
+```text
+POST /api/mitre/sync
+```
+
+### Health
+
+```text
+GET /health
+```
+
+---
+
+## AI Request Flow
+
+The AI architecture is centralized around `src/services/groq.service.js`.
+
+```text
+Frontend
+   │
+   ├── selected model ID
+   ├── conversation messages
+   └── investigation context
+            │
+            ▼
+POST /api/investigate/chat
+            │
+            ▼
+GroqService.validateModel()
+            │
+            ▼
+Central model allowlist
+            │
+            ▼
+Groq API
+            │
+            ▼
+AI response
+```
+
+For model discovery:
+
+```text
+Frontend
+   │
+   ▼
+GET /api/ai/models
+   │
+   ▼
+Supported models + default
+   │
+   ▼
+Validated local selection
+```
+
+The frontend stores the selected model ID in browser `localStorage` and sends it with chat requests. The backend remains authoritative and rejects unsupported model IDs.
+
+---
+
+## Security Architecture
+
+The application includes several security controls:
+
+- **Helmet** for HTTP security headers.
+- **CORS** configuration through `CORS_ORIGIN`.
+- **Express rate limiting** for `/api/` routes.
+- **Joi/regex validation** for IOC input.
+- **Optional API-key authentication** using `WORKBENCH_API_KEY` or `API_KEY`.
+- **Server-side secret handling** for all external provider API keys.
+- **Client-side AI model validation followed by backend allowlist validation**.
+- **10 MB Express JSON/urlencoded request limits**.
+- **Centralized error handling**.
+
+### Protected Route Groups
+
+When a workbench API key is configured:
+
+```text
+/api/investigate/*
+/api/history/*
+/api/export/*
+/api/mitre/sync
+```
+
+The following AI metadata routes remain public because they expose configuration metadata only:
+
+```text
+/api/ai/models
+/api/ai/status
+```
+
+### Secrets
+
+Never commit:
+
+```text
+.env
+```
+
+Never expose:
+
+```text
+GROQ_API_KEY
+VIRUSTOTAL_API_KEY
+ABUSEIPDB_API_KEY
+SHODAN_API_KEY
+OTX_API_KEY
+URLSCAN_API_KEY
+WORKBENCH_API_KEY
+```
+
+inside frontend source code or public client payloads.
+
+---
+
+## AI Troubleshooting
+
+### AI Assistant Shows an Error
+
+Check the Groq configuration:
+
+```bash
+curl http://localhost:3000/api/ai/status
+```
+
+Then verify that `.env` contains:
+
+```env
+GROQ_API_KEY=your_real_groq_key
+GROQ_MODEL=openai/gpt-oss-120b
+```
+
+Check the supported model registry:
+
+```bash
+curl http://localhost:3000/api/ai/models
+```
+
+The frontend chat assistant uses:
+
+```text
+POST /api/investigate/chat
+```
+
+with:
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Why did this indicator receive this risk score?"
+    }
+  ],
+  "context": {},
+  "model": "openai/gpt-oss-120b"
+}
+```
+
+Do not use the old `/api/chat` contract.
+
+---
+
+## Database Troubleshooting
+
+If PostgreSQL is running but application tables are missing, run:
+
+```bash
+npm run migrate
+```
+
+For Docker:
+
+```bash
+docker-compose up -d db
+docker-compose ps
+npm run migrate
+```
+
+Check the configured database values in `.env` and confirm they match the active PostgreSQL instance.
+
+Do not remove the `pgdata` Docker volume unless you intentionally want to discard the persisted PostgreSQL data.
 
 ---
 
@@ -346,6 +623,52 @@ threat-intel-workbench-backend/
 - 📖 **[User Guide (`docs/USER_GUIDE.md`)](docs/USER_GUIDE.md)**: Operational manual covering investigation workflows, tab breakdowns, and export procedures.
 - ⚙️ **[API Reference (`docs/API.md`)](docs/API.md)**: Complete REST API documentation including endpoint paths, parameters, JSON schemas, and Server-Sent Events (SSE).
 - 🏗️ **[System Architecture (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md)**: Comprehensive technical specification detailing Mermaid flowcharts, PostgreSQL integration, SSE, multi-feed concurrency, and security defense layers.
+
+---
+
+## Current Implementation Notes
+
+The repository currently uses:
+
+```text
+Runtime:       Node.js 22
+Framework:     Express 4
+Database:      PostgreSQL 15 via Docker Compose
+ORM:           Sequelize
+Frontend:      Vanilla JavaScript SPA
+AI Provider:   Groq
+Default AI:    openai/gpt-oss-120b
+```
+
+The AI model registry is centralized in:
+
+```text
+src/services/groq.service.js
+```
+
+The AI model API is exposed through:
+
+```text
+src/routes/ai.routes.js
+```
+
+The main AI chat route is:
+
+```text
+POST /api/investigate/chat
+```
+
+The floating frontend assistant is implemented in:
+
+```text
+frontend/js/chat-widget.js
+```
+
+The frontend AI model state is handled in:
+
+```text
+frontend/js/api.js
+```
 
 ---
 
